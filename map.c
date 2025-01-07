@@ -5,6 +5,7 @@
 #include <ctype.h>
 #include <time.h>
 
+
 int random_number(int a, int b) {
     int random_number = (rand() % (b - a + 1)) + a;
     return random_number;
