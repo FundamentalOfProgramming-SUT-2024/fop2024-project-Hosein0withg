@@ -4,6 +4,8 @@
 #include <string.h>
 #include <ctype.h>
 
+
+
 int compare(const void *a, const void *b);
 void scoreboard2(char name[30]);
 void scoreboard1(char name[30]);
