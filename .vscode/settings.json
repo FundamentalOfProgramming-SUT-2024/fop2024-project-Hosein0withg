@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "ncurses.h": "c",
+        "string.h": "c",
+        "locale.h": "c",
+        "wchar.h": "c",
+        "ctype.h": "c",
+        "stdio.h": "c"
+    }
+}

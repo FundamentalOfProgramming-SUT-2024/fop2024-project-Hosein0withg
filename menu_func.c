@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-
+#include <locale.h>
+#include <wchar.h>
 
 
 int compare(const void *a, const void *b);
@@ -21,6 +22,7 @@ int correct_email(char str[30]);
 void main_menu();
 
 void scoreboard1(char name[30]) {
+    setlocale(LC_ALL, "");
     char top_user[10][30]; int top_point[10], top_gold[10], top_fg[10], top_sg[10]; int p[10], g[10], fg1[10], sg1[10];
     FILE* user = fopen("username.txt","r");
     FILE* points = fopen("points.txt","r");
@@ -77,12 +79,15 @@ void scoreboard1(char name[30]) {
     init_pair(2,COLOR_WHITE,COLOR_RED);
     init_pair(3,COLOR_WHITE,COLOR_YELLOW);
     init_pair(4,COLOR_WHITE,COLOR_BLUE);
-
+    wchar_t gold_medal[] = L"🏅";
+    wchar_t silver_medal[] = L"🥈";
+    wchar_t bronze_medal[] = L"🥉";
     printw("|rank| username                               |point|gold|fgame|exp|\n");
 
     if (strcmp(name,top_user[0]) == 0) attron(A_BOLD | A_UNDERLINE);
     attron(COLOR_PAIR(2) | A_ITALIC);
     printw("|1   |                                        |     |    |     |   |\n");
+    mvaddwstr(1, 3, gold_medal);
     int q = 0;
     mvprintw((q+1),7,"%-25s",top_user[q]); mvprintw((q+1),31,"%-10s","(The Legend)");
     mvprintw((q+1),47,"%-5d",top_point[q]); mvprintw((q+1),53,"%-4d",top_gold[q]);
@@ -94,6 +99,7 @@ void scoreboard1(char name[30]) {
     attron(COLOR_PAIR(3) | A_ITALIC);
     move(2,0);
     printw("|2   |                                        |     |    |     |   |\n");
+    mvaddwstr(2, 3, silver_medal);
     q++;
     mvprintw((q+1),7,"%-25s",top_user[q]); mvprintw((q+1),31,"%-10s","(The Goat)");
     mvprintw((q+1),47,"%-5d",top_point[q]); mvprintw((q+1),53,"%-4d",top_gold[q]);
@@ -105,6 +111,7 @@ void scoreboard1(char name[30]) {
     attron(COLOR_PAIR(4) | A_ITALIC);
     move(3,0);
     printw("|3   |                                        |     |    |     |   |\n");
+    mvaddwstr(3, 3, bronze_medal);
     q++;
     mvprintw((q+1),7,"%-25s",top_user[q]); mvprintw((q+1),31,"%-10s","(The Champion)");
     mvprintw((q+1),47,"%-5d",top_point[q]); mvprintw((q+1),53,"%-4d",top_gold[q]);
@@ -145,9 +152,9 @@ void scoreboard1(char name[30]) {
         }
         int ch = getch();
         if (ch == KEY_UP)
-            choice = (choice == 0) ? 2 : choice - 1;
+            choice = (choice == 0) ? 1 : choice - 1;
         else if (ch == KEY_DOWN)
-            choice = (choice == 2) ? 0 : choice + 1;
+            choice = (choice == 1) ? 0 : choice + 1;
         else if (ch == 10)
             break;
     }
