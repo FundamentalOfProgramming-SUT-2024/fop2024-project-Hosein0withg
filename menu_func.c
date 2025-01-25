@@ -6,6 +6,36 @@
 #include <locale.h>
 #include <wchar.h>
 
+struct position {
+    int y;
+    int x;
+};
+struct position2 {
+    int y;
+    int x;
+    char s;
+};
+struct position location;
+struct position2 last_cell;
+int tabaghe = 1;
+struct player_hlth_mny {
+    char username[30];
+    int color;
+    int gold;
+    int point;
+    int health;
+    char current_weapon;
+    int mace;
+    int dagger;
+    int magic_wand;
+    int normal_arrow;
+    int sword;
+    int potion_health;
+    int potion_speed;
+    int potion_damage;
+    int food;
+};
+struct player_hlth_mny player;
 
 int compare(const void *a, const void *b);
 void scoreboard2(char name[30]);
@@ -20,6 +50,7 @@ void new_user();
 int correct_password(char str[30]);
 int correct_email(char str[30]);
 void main_menu();
+
 
 void scoreboard1(char name[30]) {
     setlocale(LC_ALL, "");
@@ -291,9 +322,9 @@ void scoreboard2(char name[30]) {
         }
         int ch = getch();
         if (ch == KEY_UP)
-            choice = (choice == 0) ? 2 : choice - 1;
+            choice = (choice == 0) ? 1 : choice - 1;
         else if (ch == KEY_DOWN)
-            choice = (choice == 2) ? 0 : choice + 1;
+            choice = (choice == 1) ? 0 : choice + 1;
         else if (ch == 10)
             break;
     }
@@ -349,10 +380,11 @@ void game_menu_user(char name[30]) {
     switch (choice)
     {
     case 0:
-        //$
+        tabaghe = 1;
+        make_random_map();
         break;
     case 1:
-        //$
+        main_menu();
         break;
     case 2:
         setting(name);
@@ -379,11 +411,11 @@ void hero_color(char name[30]) {
     noecho();
     init_pair(1,COLOR_WHITE,COLOR_GREEN);
     attron(COLOR_PAIR(1));
-    const char *menu[] = {"Red", "Green", "Blue", "White","Yellow"};
+    const char *menu[] = {"Red", "Green", "Purple","Yellow"};
     int choice = 0;
     while (1)
     {
-        for (int i = 0; i < 5; ++i)
+        for (int i = 0; i < 4; ++i)
         {
             if (i == choice)
                 attron(A_REVERSE);
@@ -393,9 +425,9 @@ void hero_color(char name[30]) {
         }
         int ch = getch();
         if (ch == KEY_UP)
-            choice = (choice == 0) ? 4 : choice - 1;
+            choice = (choice == 0) ? 3 : choice - 1;
         else if (ch == KEY_DOWN)
-            choice = (choice == 4) ? 0 : choice + 1;
+            choice = (choice == 3) ? 0 : choice + 1;
         else if (ch == 10)
             break;
     }
@@ -403,8 +435,22 @@ void hero_color(char name[30]) {
     attroff(COLOR_PAIR(1));
     clear();
     refresh();
+    switch (choice)
+    {
+    case 0:
+        player.color = 2;
+        break;
+    case 1:
+        player.color = 6;
+        break;
+    case 2:
+        player.color = 3;
+        break;
+    case 3:
+        player.color = 4;
+        break;
+    }
     setting(name);
-    //$
 }
 
 void difficulty(char name[30]) {
@@ -440,7 +486,18 @@ void difficulty(char name[30]) {
     attroff(COLOR_PAIR(1));
     clear();
     refresh();
-    //$
+    switch (choice)
+    {
+    case 0:
+        player.health = 150;
+        break;
+    case 1:
+        player.health = 100;
+        break;
+    case 2:
+        player.health = 50;
+        break;
+    }
     setting(name);
 }
 
@@ -572,6 +629,7 @@ void login_menu() {
             printw("Enter Password: ");
             scanw("%s",password);
         }
+        strcpy(player.username,username);
         attroff(COLOR_PAIR(1));
         clear();
         printw("you are logged in successfully!\n");
@@ -582,7 +640,8 @@ void login_menu() {
     case 1:
         refresh();
         clear();
-        //$
+        strcpy(player.username,"guest");
+        make_random_map();
         break;
     case 2:
         refresh();
