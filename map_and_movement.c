@@ -6,7 +6,6 @@
 #include <time.h>
 #include <unistd.h>
 
-// g -  f  -  i->(z,m,k,s,a,w)  -  p  -  e     are special keys till now
 
 struct position {
     int y;
@@ -64,6 +63,8 @@ void enemy_hit_us(int y, int x);
 void initialize_enemy();
 int wake_enemy(int x, int y);
 void game_over();
+void enemy_hit_long_range(int x, int y, int direction, int range, int hit);
+char enemy_that_were_close_hit(int x, int y);
 
 int random_number(int a, int b) {
     int random_number = (rand() % (b - a + 1)) + a;
@@ -667,8 +668,219 @@ void move_and_message() {
     while (1)
     {
         ch = getch();
+        int direction;
 
         if (ch == 'q') break;
+
+        else if (ch == ' ') {
+            if (strcmp(player.current_weapon,"Mace") == 0)
+            {
+                switch (enemy_that_were_close_hit(location.x,location.y))
+                {
+                case 'D':
+                    attron(COLOR_PAIR(6));
+                    mvprintw(0,1,"You hit 'Deamon'!                                              ");
+                    deamon.health -= 5;
+                    if (deamon.health <= 0)
+                    {
+                        mvprintw(0,1,"You killed 'Deamon'!                                            ");
+                        attron(COLOR_PAIR(1));
+                        mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                        deamon.woke = 0;
+                    }
+                    break;
+                case 'F':
+                    attron(COLOR_PAIR(6));
+                    mvprintw(0,1,"You hit 'FBM'!                                                 ");
+                    fire.health -= 5;
+                    if (fire.health <= 0)
+                    {
+                        mvprintw(0,1,"You killed 'FBM'!                                            ");
+                        attron(COLOR_PAIR(1));
+                        mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                        fire.woke = 0;
+                    }
+                    break;
+                case 'G':
+                    attron(COLOR_PAIR(6));
+                    mvprintw(0,1,"You hit 'Giant'!                                               ");
+                    giant.health -= 5;
+                    if (giant.health <= 0)
+                    {
+                        mvprintw(0,1,"You killed 'Giant'!                                            ");
+                        attron(COLOR_PAIR(1));
+                        mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                        giant.woke = 0;
+                    }
+                    break;
+                case 'M':
+                    attron(COLOR_PAIR(6));
+                    mvprintw(0,1,"You hit 'Snake'!                                              ");
+                    snake.health -= 5;
+                    if (snake.health <= 0)
+                    {
+                        mvprintw(0,1,"You killed 'Snake'!                                            ");
+                        attron(COLOR_PAIR(1));
+                        mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                        snake.woke = 0;
+                    }
+                    break;
+                case 'U':
+                    attron(COLOR_PAIR(6));
+                    mvprintw(0,1,"You hit 'Undeed'!                                             ");
+                    undeed.health -= 5;
+                    if (undeed.health <= 0)
+                    {
+                        mvprintw(0,1,"You killed 'Undeed'!                                            ");
+                        attron(COLOR_PAIR(1));
+                        mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                        undeed.woke = 0;
+                    }
+                    break;
+                }
+            }
+            if (strcmp(player.current_weapon,"Sword") == 0)
+            {
+                switch (enemy_that_were_close_hit(location.x,location.y))
+                {
+                case 'D':
+                    attron(COLOR_PAIR(6));
+                    mvprintw(0,1,"You hit 'Deamon'!                                              ");
+                    deamon.health -= 10;
+                    if (deamon.health <= 0)
+                    {
+                        mvprintw(0,1,"You killed 'Deamon'!                                            ");
+                        attron(COLOR_PAIR(1));
+                        mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                        deamon.woke = 0;
+                    }
+                    break;
+                case 'F':
+                    attron(COLOR_PAIR(6));
+                    mvprintw(0,1,"You hit 'FBM'!                                                 ");
+                    fire.health -= 10;
+                    if (fire.health <= 0)
+                    {
+                        mvprintw(0,1,"You killed 'FBM'!                                            ");
+                        attron(COLOR_PAIR(1));
+                        mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                        fire.woke = 0;
+                    }
+                    break;
+                case 'G':
+                    attron(COLOR_PAIR(6));
+                    mvprintw(0,1,"You hit 'Giant'!                                               ");
+                    giant.health -= 10;
+                    if (giant.health <= 0)
+                    {
+                        mvprintw(0,1,"You killed 'Giant'!                                            ");
+                        attron(COLOR_PAIR(1));
+                        mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                        giant.woke = 0;
+                    }
+                    break;
+                case 'M':
+                    attron(COLOR_PAIR(6));
+                    mvprintw(0,1,"You hit 'Snake'!                                              ");
+                    snake.health -= 10;
+                    if (snake.health <= 0)
+                    {
+                        mvprintw(0,1,"You killed 'Snake'!                                            ");
+                        attron(COLOR_PAIR(1));
+                        mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                        snake.woke = 0;
+                    }
+                    break;
+                case 'U':
+                    attron(COLOR_PAIR(6));
+                    mvprintw(0,1,"You hit 'Undeed'!                                             ");
+                    undeed.health -= 10;
+                    if (undeed.health <= 0)
+                    {
+                        mvprintw(0,1,"You killed 'Undeed'!                                            ");
+                        attron(COLOR_PAIR(1));
+                        mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                        undeed.woke = 0;
+                    }
+                    break;
+                }
+            }
+            if (strcmp(player.current_weapon,"Arrow") == 0)
+            {
+                direction = getch();
+                if (player.normal_arrow == 0)
+                {
+                    mvprintw(0,1,"You don't have any 'Arrow'!                                    ");
+                    continue;
+                }
+                player.normal_arrow--;
+                switch (direction)
+                {
+                case KEY_UP:
+                    enemy_hit_long_range(location.x,location.y,1,5,5);
+                    break;
+                case KEY_RIGHT:
+                    enemy_hit_long_range(location.x,location.y,2,5,5);
+                    break;
+                case KEY_DOWN:
+                    enemy_hit_long_range(location.x,location.y,3,5,5);
+                    break;
+                case KEY_LEFT:
+                    enemy_hit_long_range(location.x,location.y,4,5,5);
+                    break;
+                }
+            }
+            if (strcmp(player.current_weapon,"Wand") == 0)
+            {
+                direction = getch();
+                if (player.magic_wand == 0)
+                {
+                    mvprintw(0,1,"You don't have any 'Wand'!                                    ");
+                    continue;
+                }
+                player.magic_wand--;
+                switch (direction)
+                {
+                case KEY_UP:
+                    enemy_hit_long_range(location.x,location.y,1,10,15);
+                    break;
+                case KEY_RIGHT:
+                    enemy_hit_long_range(location.x,location.y,2,10,15);
+                    break;
+                case KEY_DOWN:
+                    enemy_hit_long_range(location.x,location.y,3,10,15);
+                    break;
+                case KEY_LEFT:
+                    enemy_hit_long_range(location.x,location.y,4,10,15);
+                    break;
+                }
+            }
+            if (strcmp(player.current_weapon,"Dagger") == 0)
+            {
+                direction = getch();
+                if (player.dagger == 0)
+                {
+                    mvprintw(0,1,"You don't have any 'Dagger'!                                  ");
+                    continue;
+                }
+                player.dagger--;
+                switch (direction)
+                {
+                case KEY_UP:
+                    enemy_hit_long_range(location.x,location.y,1,5,12);
+                    break;
+                case KEY_RIGHT:
+                    enemy_hit_long_range(location.x,location.y,2,5,12);
+                    break;
+                case KEY_DOWN:
+                    enemy_hit_long_range(location.x,location.y,3,5,12);
+                    break;
+                case KEY_LEFT:
+                    enemy_hit_long_range(location.x,location.y,4,5,12);
+                    break;
+                }
+            }
+        }
 
         else if (ch == 'g') {
             ch2 = getch();
@@ -713,42 +925,42 @@ void move_and_message() {
                 break;
             case 's':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You ignored the 'speed potion'!                        ");
+                mvprintw(0,1,"You ignored the 'Speed Potion'!                        ");
                 player.potion_speed--;
                 break;
             case 'h':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You ignored the 'health potion'!                        ");
+                mvprintw(0,1,"You ignored the 'Health Potion'!                        ");
                 player.potion_health--;
                 break;
             case 'd':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You ignored the 'damage potion'!                        ");
+                mvprintw(0,1,"You ignored the 'Damage Potion'!                        ");
                 player.potion_damage--;
                 break;
             case 'A':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You ignored the 'normal arrow'!                         ");
+                mvprintw(0,1,"You ignored the 'Normal Arrow'!                         ");
                 player.normal_arrow--;
                 break;
             case 'S':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You ignored the 'sword'!                                ");
+                mvprintw(0,1,"You ignored the 'Sword'!                                ");
                 if (player.sword == 1) player.sword = 0;
                 break;
             case 'W':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You ignored the 'magic wand'!                          ");
+                mvprintw(0,1,"You ignored the 'Magic Wand'!                          ");
                 player.magic_wand--;
                 break;
             case 'K':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You ignored the 'dagger'!                              ");
+                mvprintw(0,1,"You ignored the 'Dagger'!                              ");
                 player.dagger--;
                 break;
             case 'f':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You ignored the 'food'!                                 ");
+                mvprintw(0,1,"You ignored the 'Food'!                                 ");
                 player.food--;
                 break;
             }
@@ -801,42 +1013,42 @@ void move_and_message() {
                     break;
                 case 's':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You add 1 'speed potion' to your backpack!            ");
+                mvprintw(0,1,"You add 1 'Speed Potion' to your backpack!            ");
                 last_cell.s = '.';
                 break;
                 case 'h':
                     attron(COLOR_PAIR(1));
-                    mvprintw(0,1,"You add 1 'health potion' to your backpack!            ");
+                    mvprintw(0,1,"You add 1 'Health Potion' to your backpack!            ");
                     last_cell.s = '.';
                     break;
                 case 'd':
                     attron(COLOR_PAIR(1));
-                    mvprintw(0,1,"You add 1 'damage potion' to your backpack!            ");
+                    mvprintw(0,1,"You add 1 'Damage Potion' to your backpack!            ");
                     last_cell.s = '.';
                     break;
                 case 'A':
                     attron(COLOR_PAIR(1));
-                    mvprintw(0,1,"You add 1 'normal arrow' to your backpack!             ");
+                    mvprintw(0,1,"You add 1 'Normal Arrow' to your backpack!             ");
                     last_cell.s = '.';
                     break;
                 case 'S':
                     attron(COLOR_PAIR(1));
-                    mvprintw(0,1,"You add 'sword' to your backpack!                     ");
+                    mvprintw(0,1,"You add 'Sword' to your backpack!                     ");
                     last_cell.s = '.';
                     break;
                 case 'W':
                     attron(COLOR_PAIR(1));
-                    mvprintw(0,1,"You add 1 'magic wand' to your backpack!              ");
+                    mvprintw(0,1,"You add 1 'Magic Wand' to your backpack!              ");
                     last_cell.s = '.';
                     break;
                 case 'K':
                     attron(COLOR_PAIR(1));
-                    mvprintw(0,1,"You add 1 'dagger' to your backpack!                 ");
+                    mvprintw(0,1,"You add 1 'Dagger' to your backpack!                 ");
                     last_cell.s = '.';
                     break;
                 case 'f':
                     attron(COLOR_PAIR(1));
-                    mvprintw(0,1,"You add 1 'food' to your backpack!                   ");
+                    mvprintw(0,1,"You add 1 'Food' to your backpack!                   ");
                     last_cell.s = '.';
                     break;
                 case '!':
@@ -1269,6 +1481,339 @@ void move_and_message() {
     attroff(COLOR_PAIR(player.color));
     clear();
     refresh();
+}
+
+void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
+    switch (direction)
+    {
+    case 1:
+        for (int i = 1; i < range; i++)
+        {
+            char ch = mvinch(y-i, x) & A_CHARTEXT;
+            if (ch == 'D')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Deamon'!                                             ");
+                deamon.health -= hit;
+                if (deamon.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Deamon'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    deamon.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'F') {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'FBM'!                                                 ");
+                fire.health -= hit;
+                if (fire.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'FMB'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    fire.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'G')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Giant'!                                               ");
+                giant.health -= hit;
+                if (giant.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Giant'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    giant.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'U')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Undeed'!                                             ");
+                undeed.health -= hit;
+                if (undeed.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Undeed'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    undeed.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'M')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Snake'!                                             ");
+                snake.health -= hit;
+                if (snake.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Snake'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    snake.woke = 0;
+                }
+                break;
+            }
+        }
+        break;
+    case 2:
+        for (int i = 1; i < range; i++)
+        {
+            char ch = mvinch(y, x+i) & A_CHARTEXT;
+            if (ch == 'D')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Deamon'!                                             ");
+                deamon.health -= hit;
+                if (deamon.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Deamon'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    deamon.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'F') {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'FBM'!                                                 ");
+                fire.health -= hit;
+                if (fire.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'FMB'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    fire.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'G')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Giant'!                                               ");
+                giant.health -= hit;
+                if (giant.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Giant'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    giant.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'U')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Undeed'!                                             ");
+                undeed.health -= hit;
+                if (undeed.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Undeed'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    undeed.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'M')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Snake'!                                             ");
+                snake.health -= hit;
+                if (snake.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Snake'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    snake.woke = 0;
+                }
+                break;
+            }
+        }
+        break;
+    case 3:
+        for (int i = 1; i < range; i++)
+        {
+            char ch = mvinch(y+i, x) & A_CHARTEXT;
+            if (ch == 'D')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Deamon'!                                             ");
+                deamon.health -= hit;
+                if (deamon.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Deamon'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    deamon.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'F') {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'FBM'!                                                 ");
+                fire.health -= hit;
+                if (fire.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'FMB'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    fire.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'G')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Giant'!                                               ");
+                giant.health -= hit;
+                if (giant.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Giant'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    giant.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'U')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Undeed'!                                             ");
+                undeed.health -= hit;
+                if (undeed.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Undeed'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    undeed.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'M')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Snake'!                                             ");
+                snake.health -= hit;
+                if (snake.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Snake'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    snake.woke = 0;
+                }
+                break;
+            }
+        }
+        break;
+    case 4:
+        for (int i = 1; i < range; i++)
+        {
+            char ch = mvinch(y, x-i) & A_CHARTEXT;
+            if (ch == 'D')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Deamon'!                                             ");
+                deamon.health -= hit;
+                if (deamon.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Deamon'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    deamon.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'F') {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'FBM'!                                                 ");
+                fire.health -= hit;
+                if (fire.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'FMB'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    fire.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'G')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Giant'!                                               ");
+                giant.health -= hit;
+                if (giant.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Giant'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    giant.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'U')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Undeed'!                                             ");
+                undeed.health -= hit;
+                if (undeed.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Undeed'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    undeed.woke = 0;
+                }
+                break;
+            }
+            if (ch == 'M')
+            {
+                attron(COLOR_PAIR(6));
+                mvprintw(0,1,"You hit 'Snake'!                                             ");
+                snake.health -= hit;
+                if (snake.health <= 0)
+                {
+                    mvprintw(0,1,"You killed 'Snake'!                                            ");
+                    attron(COLOR_PAIR(1));
+                    mvaddch(last_last_cell.y,last_last_cell.x,'.');
+                    snake.woke = 0;
+                }
+                break;
+            }
+        }
+        break;
+    }
+    
+}
+
+char enemy_that_were_close_hit(int x, int y) {
+    char ch1 = mvinch(y-1, x-1) & A_CHARTEXT;
+    char ch2 = mvinch(y-1, x) & A_CHARTEXT;
+    char ch3 = mvinch(y-1, x+1) & A_CHARTEXT;
+    char ch4 = mvinch(y, x-1) & A_CHARTEXT;
+    char ch5 = mvinch(y, x+1) & A_CHARTEXT;
+    char ch6 = mvinch(y+1, x-1) & A_CHARTEXT;
+    char ch7 = mvinch(y+1, x) & A_CHARTEXT;
+    char ch8 = mvinch(y+1, x+1) & A_CHARTEXT;
+
+    if (ch1 == 'D' || ch2 == 'D' || ch3 == 'D' || ch4 == 'D' || ch5 == 'D' || ch6 == 'D' || ch7 == 'D' || ch8 == 'D')
+        return 'D';
+
+    if (ch1 == 'F' || ch2 == 'F' || ch3 == 'F' || ch4 == 'F' || ch5 == 'F' || ch6 == 'F' || ch7 == 'F' || ch8 == 'F')
+        return 'F';
+
+    if (ch1 == 'G' || ch2 == 'G' || ch3 == 'G' || ch4 == 'G' || ch5 == 'G' || ch6 == 'G' || ch7 == 'G' || ch8 == 'G')
+        return 'G';
+
+    if (ch1 == 'M' || ch2 == 'M' || ch3 == 'M' || ch4 == 'M' || ch5 == 'M' || ch6 == 'M' || ch7 == 'M' || ch8 == 'M')
+        return 'M';
+
+    if (ch1 == 'U' || ch2 == 'U' || ch3 == 'U' || ch4 == 'U' || ch5 == 'U' || ch6 == 'U' || ch7 == 'U' || ch8 == 'U')
+        return 'U';
 }
 
 void enemy_hit_us(int y, int x) {
