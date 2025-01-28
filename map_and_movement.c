@@ -6,7 +6,7 @@
 #include <time.h>
 #include <unistd.h>
 
-// g f i p e are special keys till now
+// g -  f  -  i->(z,m,k,s,a,w)  -  p  -  e     are special keys till now
 
 struct position {
     int y;
@@ -22,15 +22,17 @@ struct position2 last_cell;
 struct position2 last_last_cell;
 struct position2 enemy_location;
 
-int tabaghe = 1, count = 0;
+int tabaghe = 1;
 struct enemy {
     int health;
     int woke;
+    int y;
+    int x;
 };
 struct player_health_money_wapon {
     char username[30];
     int color;
-    char current_weapon;
+    char current_weapon[30];
 
     int gold;
     int point;
@@ -52,13 +54,16 @@ struct enemy deamon; struct enemy snake; struct enemy undeed; struct enemy fire;
 
 
 int save_game(int won);
+void clean_right_side();
 void make_random_map();
 int random_number(int a, int b);
 int valid_move(int x, int y);
 void move_character(int i);
 void move_and_message();
+void enemy_hit_us(int y, int x);
 void initialize_enemy();
 int wake_enemy(int x, int y);
+void game_over();
 
 int random_number(int a, int b) {
     int random_number = (rand() % (b - a + 1)) + a;
@@ -359,12 +364,18 @@ void make_random_map() {
         mvaddch(i,79,'|');
         mvaddch(i,110,'|');
     }
+    for (int i = 80; i < 110; i++)
+    {
+        mvaddch(20,i,'_');
+    }
+    attron(COLOR_PAIR(4));
     mvprintw(21,80," ____                         ");
     mvprintw(22,80,"|  _ \\ ___   __ _ _   _  ___  ");
     mvprintw(23,80,"| |_) / _ \\ / _` | | | |/ _ \\ ");
     mvprintw(24,80,"|  _ < (_) | (_| | |_| |  __/ ");
     mvprintw(25,80,"|_| \\_\\___/ \\__, |\\__,_|\\___| ");
     mvprintw(26,80,"            |___/");
+    attron(COLOR_PAIR(1));
 
     int pos[15][2];
     initialize_enemy();
@@ -506,23 +517,29 @@ void make_random_map() {
                     }
                     else if (((tabaghe == 4 && current_room != ganj_room) || (tabaghe != 4)) && (current_room != telesm_room) && (current_room != 6) && (i == enemyy) && (j == enemyx) ) {
                         a2 = ((a2+2) % 5) + 1;
+                        
                         attron(COLOR_PAIR(2));
                         switch (a2)
                         {
                         case 1:
                             addch('D');
+                            deamon.y = y + i; deamon.x = x + j;
                             break;
                         case 2:
                             addch('F');
+                            fire.y = y + i; fire.x = x + j;
                             break;
                         case 3:
                             addch('G');
+                            giant.y = y + i; giant.x = x + j;
                             break;
                         case 4:
                             addch('M');
+                            snake.y = y + i; snake.x = x + j;
                             break;
                         case 5:
                             addch('U');
+                            undeed.y = y + i; undeed.x = x + j;
                             break;
                         }
                         attroff(COLOR_PAIR(2));
@@ -640,6 +657,7 @@ void move_and_message() {
     init_pair(7,COLOR_WHITE,COLOR_BLACK);
 
     int ch, ch2;
+    int count_d = 0, count_f = 0;
     attron(COLOR_PAIR(player.color));
     mvaddch(location.y,location.x,'@');
 
@@ -687,15 +705,8 @@ void move_and_message() {
                 attron(COLOR_PAIR(1));
                 mvprintw(0,1,"You were Trapped! You lost 5 points!                 ");
                 mvprintw(1,21,"Health: %d ",player.health);
-                if (player.health == 0) {
-                    mvprintw(1,21,"Health: %d ",0);
-                    mvprintw(0,1,"Game Over!!                             ");
-                    //save_game(0);
-                    refresh();
-                    napms(5000);
-                    refresh();
-                    clear();
-                    //main_menu();
+                if (player.health <= 0) {
+                    game_over();
                 }
                 attroff(COLOR_PAIR(1));
                 attron(COLOR_PAIR(player.color));
@@ -782,15 +793,8 @@ void move_and_message() {
                     attron(COLOR_PAIR(1));
                     mvprintw(0,1,"You were Trapped! You lost 5 points!                 ");
                     mvprintw(1,21,"Health: %d ",player.health);
-                    if (player.health == 0) {
-                        mvprintw(1,21,"Health: %d ",0);
-                        mvprintw(0,1,"Game Over!!                              ");
-                        //save_game(0);
-                        refresh();
-                        napms(5000);
-                        refresh();
-                        clear();
-                        //main_menu();
+                    if (player.health <= 0) {
+                        game_over();
                     }
                     attroff(COLOR_PAIR(1));
                     attron(COLOR_PAIR(player.color));
@@ -853,6 +857,7 @@ void move_and_message() {
         
         else if (ch == 'e') {
             attron(COLOR_PAIR(2));
+            clean_right_side();
             mvprintw(0,87,"Food Menu");
             mvprintw(4,83,"Normal Food:    %d   ",player.food);
             mvprintw(5,83,"Suoreme Food:   0   ");
@@ -877,6 +882,7 @@ void move_and_message() {
 
         else if (ch == 'p') {
             attron(COLOR_PAIR(2));
+            clean_right_side();
             mvprintw(0,87,"Potion Menu");
             mvprintw(4,83,"Health Potion:    %d   ",player.potion_health);
             mvprintw(5,83,"Speed Potion:     %d   ",player.potion_speed);
@@ -889,25 +895,159 @@ void move_and_message() {
 
         else if (ch == 'i') {
             attron(COLOR_PAIR(2));
+            clean_right_side();
             mvprintw(0,87,"Weapon Menu");
-            mvprintw(4,80,"weapon     dmg  rng  lft");
-            mvprintw(5,80,"Mace:      5    1    inf");
-            mvprintw(6,80,"Dagger(K): 12   5    %d  ",player.dagger);
-            mvprintw(7,80,"Wand(W):   15   10   %d  ",player.magic_wand);
-            mvprintw(8,80,"Arrow(A):  5    5    %d  ",player.normal_arrow);
-            player.sword == 1 ? mvprintw(9,80,"Sword(S):  10   1    Yes") : mvprintw(9,80,"Sword(S):  10   1    No ");
-            mvprintw(10,81,"                      ");
+            mvprintw(4,80," weapon       dmg  rng  lft   ");
+            mvprintw(5,80,"------------------------------");
+            attron(COLOR_PAIR(1));
+            mvprintw(6,80,"        (short ranges)        ");
+            attron(COLOR_PAIR(2));
+            mvprintw(7,80," Mace:(M)     5    1    inf   ");
+            mvprintw(9,80,"------------------------------");
+            attron(COLOR_PAIR(1));
+            mvprintw(10,80,"        (long ranges)        ");
+            attron(COLOR_PAIR(2));
+            mvprintw(11,80," Dagger(K):   12   5    %d   ",player.dagger);
+            mvprintw(12,80," Wand(W):     15   10   %d   ",player.magic_wand);
+            mvprintw(13,80," Arrow(A):    5    5    %d   ",player.normal_arrow);
+            if (player.sword == 1)
+            mvprintw(8,80," Sword(S):    10   1    Yes   ");
+            else
+            mvprintw(8,80," Sword(S):    10   1    No    ");
+            mvprintw(14,80,"------------------------------");
+            attron(COLOR_PAIR(1));
+            mvprintw(15,80,"       (current weapon)       ");
+            attron(COLOR_PAIR(2));
+            mvprintw(16,80," %s",player.current_weapon);
+            char com; com = getch();
+
+            if (com == 'z') {
+                if (strcmp(player.current_weapon,"Mace") == 0)
+                {
+                    attron(COLOR_PAIR(1));
+                    mvprintw(0,1,"You put your 'Mace' in your backpack!         ");
+                }
+                else if (strcmp(player.current_weapon,"Dagger") == 0)
+                {
+                    attron(COLOR_PAIR(1));
+                    mvprintw(0,1,"You put a 'Dagger' in your backpack!          ");
+                    player.dagger++;
+                    attron(COLOR_PAIR(2));
+                    mvprintw(11,80," Dagger(K):   12   5    %d   ",player.dagger);
+                }
+                else if (strcmp(player.current_weapon,"Sword") == 0)
+                {
+                    attron(COLOR_PAIR(1));
+                    mvprintw(0,1,"You put your 'Sword' in your backpack!        ");
+                    attron(COLOR_PAIR(2));
+                    mvprintw(8,80," Sword(S):    10   1    Yes   ");
+                }
+                else if (strcmp(player.current_weapon,"Arrow") == 0)
+                {
+                    attron(COLOR_PAIR(1));
+                    mvprintw(0,1,"You put an 'Arrow' in your backpack!         ");
+                    player.normal_arrow++;
+                    attron(COLOR_PAIR(2));
+                    mvprintw(13,80," Arrow(A):    5    5    %d   ",player.normal_arrow);
+                }
+                else if (strcmp(player.current_weapon,"Wand") == 0)
+                {
+                    attron(COLOR_PAIR(1));
+                    mvprintw(0,1,"You put a 'Wand' in your backpack!           ");
+                    player.magic_wand++;
+                    attron(COLOR_PAIR(2));
+                    mvprintw(12,80," Wand(W):     15   10   %d   ",player.magic_wand);
+                }
+                
+                mvprintw(16,80,"press one of these {m,k,s,a,w}");
+                char next_weapon; int valid = 1;
+                while (valid)
+                {
+                    next_weapon = getch();
+                    switch (next_weapon)
+                    {
+                        case 'm':
+                            attron(COLOR_PAIR(1));
+                            mvprintw(0,1,"You took your 'Mace'!                        ");
+                            strcpy(player.current_weapon,"Mace");
+                            attron(COLOR_PAIR(7));
+                            mvprintw(7,80," Mace:(M)     5    1    inf   ");
+                            attron(COLOR_PAIR(2));
+                            mvprintw(16,80," Mace                         ");
+                            valid = 0;
+                            break;
+                        case 's':
+                            attron(COLOR_PAIR(1));
+                            if (player.sword == 1) {
+                                mvprintw(0,1,"You took your 'Sword'!                       ");
+                                strcpy(player.current_weapon,"Sword");
+                                valid = 0;
+                                attron(COLOR_PAIR(7));
+                                mvprintw(8,80," Sword(S):    10   1    Yes   ");
+                                attron(COLOR_PAIR(2));
+                                mvprintw(16,80," Sword                        ");
+                            }
+                            if (player.sword == 0) {
+                                mvprintw(0,1,"You don't have 'Sword'!  pick another!       ");
+                            }
+                            break;
+                        case 'k':
+                            attron(COLOR_PAIR(1));
+                            if (player.dagger == 0)
+                            {
+                                mvprintw(0,1,"You don't have any 'Dagger'!  pick another!  ");
+                            }
+                            else {
+                                mvprintw(0,1,"You took a 'Dagger'!                        ");
+                                attron(COLOR_PAIR(2));
+                                mvprintw(16,80," Dagger                       ");
+                                strcpy(player.current_weapon,"Dagger");
+                                player.dagger--;
+                                attron(COLOR_PAIR(7));
+                                mvprintw(11,80," Dagger(K):   12   5    %d   ",player.dagger);
+                                valid = 0;
+                            }
+                            break;
+                        case 'a':
+                            attron(COLOR_PAIR(1));
+                            if (player.normal_arrow == 0)
+                            {
+                                mvprintw(0,1,"You don't have any 'Arrow'!  pick another!  ");
+                            }
+                            else {
+                                mvprintw(0,1,"You took an 'Arrow'!                        ");
+                                attron(COLOR_PAIR(2));
+                                mvprintw(16,80," Arrow                        ");
+                                strcpy(player.current_weapon,"Arrow");
+                                player.normal_arrow--;
+                                attron(COLOR_PAIR(7));
+                                mvprintw(13,80," Arrow(A):    5    5    %d   ",player.normal_arrow);
+                                valid = 0;
+                            }
+                            break;
+                        case 'w':
+                            attron(COLOR_PAIR(1));
+                            if (player.magic_wand == 0)  {
+                                mvprintw(0,1,"You don't have any 'Wand'!  pick another!  ");
+                            }
+                            else {
+                                mvprintw(0,1,"You took a 'Wand'!                          ");
+                                attron(COLOR_PAIR(2));
+                                mvprintw(16,80," Wand                         ");
+                                strcpy(player.current_weapon,"Wand");
+                                player.magic_wand--;
+                                attron(COLOR_PAIR(7));
+                                mvprintw(12,80," Wand(W):     15   10   %d   ",player.magic_wand);
+                                valid = 0;
+                            }
+                            break;
+                    }
+                }
+            }
         }
 
         else {
-            mvprintw(0,81,"                      ");
-            mvprintw(4,81,"                      ");
-            mvprintw(5,81,"                      ");
-            mvprintw(6,81,"                      ");
-            mvprintw(7,81,"                      ");
-            mvprintw(8,81,"                      ");
-            mvprintw(9,81,"                      ");
-            mvprintw(10,81,"                      ");
+            clean_right_side();
 
 
             move_character(ch);
@@ -951,57 +1091,50 @@ void move_and_message() {
                 attron(COLOR_PAIR(1));
                 mvprintw(0,1,"You were Trapped! You lost 5 points!                 ");
                 mvprintw(1,21,"Health: %d ",player.health);
-                if (player.health == 0) {
-                    mvprintw(1,21,"Health: %d ",0);
-                    mvprintw(0,1,"Game Over!!                               ");
-                    //save_game(0);
-                    refresh();
-                    napms(5000);
-                    refresh();
-                    clear();
-                    //main_menu();
+                if (player.health <= 0) {
+                    game_over();
                 }
                 attroff(COLOR_PAIR(1));
                 attron(COLOR_PAIR(player.color));
                 break;
             case 's':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You add 1 'speed potion' to your backpack!            ");
+                mvprintw(0,1,"You add 1 'Speed Potion' to your backpack!            ");
                 last_cell.s = '.';
                 break;
             case 'h':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You add 1 'health potion' to your backpack!            ");
+                mvprintw(0,1,"You add 1 'Health Potion' to your backpack!            ");
                 last_cell.s = '.';
                 break;
             case 'd':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You add 1 'damage potion' to your backpack!            ");
+                mvprintw(0,1,"You add 1 'Damage Potion' to your backpack!            ");
                 last_cell.s = '.';
                 break;
             case 'A':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You add 1 'normal arrow' to your backpack!             ");
+                mvprintw(0,1,"You add 1 'Normal Arrow' to your backpack!             ");
                 last_cell.s = '.';
                 break;
             case 'S':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You add 'sword' to your backpack!                      ");
+                mvprintw(0,1,"You add 'Sword' to your backpack!                      ");
                 last_cell.s = '.';
                 break;
             case 'W':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You add 1 'magic wand' to your backpack!              ");
+                mvprintw(0,1,"You add 1 'Magic Wand' to your backpack!              ");
                 last_cell.s = '.';
                 break;
             case 'K':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You add 1 'dagger' to your backpack!                 ");
+                mvprintw(0,1,"You add 1 'Dagger' to your backpack!                 ");
                 last_cell.s = '.';
                 break;
             case 'f':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You add 1 'food' to your backpack!                   ");
+                mvprintw(0,1,"You add 1 'Food' to your backpack!                   ");
                 last_cell.s = '.';
                 break;
             case '!':
@@ -1016,26 +1149,79 @@ void move_and_message() {
                 break;
             }
 
-            if (deamon.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 1)
-                deamon.woke = 1;
+            if (deamon.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 1) {
+                if (count_d == 6)
+                {
+                    count_d = 0;
+                }
+                else {
+                    attron(COLOR_PAIR(1));
+                    mvprintw(0,1,"You woke up 'Deamon'!                           ");
+                    mvaddch(deamon.y,deamon.x,'.');
+                    deamon.woke = 1;
+                }
+            }
 
             if (deamon.woke == 1) {
+                if (count_d == 6)
+                {
+                    attron(COLOR_PAIR(2));
+                    mvaddch(enemy_location.y,enemy_location.x,'D');
+                    deamon.woke = 0; deamon.x = enemy_location.x; deamon.y = enemy_location.y;
+                    
+                    last_cell.y = location.y; last_cell.x = location.x;
+                    attron(COLOR_PAIR(player.color));
+                    mvaddch(location.y,location.x,'@');
+
+                    continue;
+                }
+                
                 attron(COLOR_PAIR(2));
                 mvaddch(enemy_location.y,enemy_location.x,'D');
+                count_d++;
                 attroff(COLOR_PAIR(2));
+                
             }
 
-            if (fire.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 2)
-                fire.woke = 1;
+            if (fire.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 2) {
+                if (count_f == 6)
+                {
+                    count_f = 0;
+                }
+                else {
+                    attron(COLOR_PAIR(1));
+                    mvprintw(0,1,"You woke up 'Fire Breathing Monster'!           ");
+                    mvaddch(fire.y,fire.x,'.');
+                    fire.woke = 1;
+                }
+            }
 
             if (fire.woke == 1) {
+                if (count_f == 6)
+                {
+                    attron(COLOR_PAIR(2));
+                    mvaddch(enemy_location.y,enemy_location.x,'F');
+                    fire.woke = 0; fire.x = enemy_location.x; fire.y = enemy_location.y;
+                    
+                    last_cell.y = location.y; last_cell.x = location.x;
+                    attron(COLOR_PAIR(player.color));
+                    mvaddch(location.y,location.x,'@');
+
+                    continue;
+                }
+                
                 attron(COLOR_PAIR(2));
                 mvaddch(enemy_location.y,enemy_location.x,'F');
+                count_f++;
                 attroff(COLOR_PAIR(2));
             }
 
-            if (giant.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 3)
+            if (giant.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 3) {
+                attron(COLOR_PAIR(1));
+                mvprintw(0,1,"You woke up 'Giant'!                         ");
+                mvaddch(giant.y,giant.x,'.');
                 giant.woke = 1;
+            }
 
             if (giant.woke == 1) {
                 attron(COLOR_PAIR(2));
@@ -1043,8 +1229,12 @@ void move_and_message() {
                 attroff(COLOR_PAIR(2));
             }
 
-            if (snake.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 4)
+            if (snake.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 4) {
+                attron(COLOR_PAIR(1));
+                mvprintw(0,1,"You woke up 'Snake'!                         ");
+                mvaddch(snake.y,snake.x,'.');
                 snake.woke = 1;
+            }
 
             if (snake.woke == 1) {
                 attron(COLOR_PAIR(2));
@@ -1052,14 +1242,21 @@ void move_and_message() {
                 attroff(COLOR_PAIR(2));
             }
 
-            if (undeed.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 5)
+            if (undeed.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 5) {
+                attron(COLOR_PAIR(1));
+                mvprintw(0,1,"You woke up 'Undeed'!                         ");
+                mvaddch(undeed.y,undeed.x,'.');
                 undeed.woke = 1;
+            }
 
             if (undeed.woke == 1) {
                 attron(COLOR_PAIR(2));
                 mvaddch(enemy_location.y,enemy_location.x,'U');
                 attroff(COLOR_PAIR(2));
             }
+            
+
+            enemy_hit_us(location.y,location.x);
 
             last_last_cell.y = enemy_location.y; last_last_cell.x = enemy_location.x;
             enemy_location.y = last_cell.y; enemy_location.x = last_cell.x;
@@ -1074,16 +1271,93 @@ void move_and_message() {
     refresh();
 }
 
+void enemy_hit_us(int y, int x) {
+    char ch1 = mvinch(y-1, x) & A_CHARTEXT;
+    char ch2 = mvinch(y+1, x) & A_CHARTEXT;
+    char ch3 = mvinch(y, x+1) & A_CHARTEXT;
+    char ch4 = mvinch(y, x-1) & A_CHARTEXT;
+    char ch5 = mvinch(y, x) & A_CHARTEXT;
+    if (ch1 == 'D' || ch2 == 'D' || ch3 == 'D' || ch4 == 'D' || ch5 == 'D') {
+        player.health -= 1;
+        attron(COLOR_PAIR(2));
+        mvprintw(0,1,"You were hit by Deamon! You lost 1 health!           ");
+        attron(COLOR_PAIR(1));
+        mvprintw(1,21,"Health: %d ",player.health);
+        if (player.health <= 0)
+            game_over();
+    }
+    if (ch1 == 'F' || ch2 == 'F' || ch3 == 'F' || ch4 == 'F' || ch5 == 'F') {
+        player.health -= 2;
+        attron(COLOR_PAIR(2));
+        mvprintw(0,1,"You were hit by FBD! You lost 2 health!           ");
+        attron(COLOR_PAIR(1));
+        mvprintw(1,21,"Health: %d ",player.health);
+        if (player.health <= 0)
+            game_over();
+    }
+    if (ch1 == 'G' || ch2 == 'G' || ch3 == 'G' || ch4 == 'G' || ch5 == 'G') {
+            player.health -= 3;
+            attron(COLOR_PAIR(2));
+            mvprintw(0,1,"You were hit by Giant! You lost 3 health!           ");
+            attron(COLOR_PAIR(1));
+            mvprintw(1,21,"Health: %d ",player.health);
+            if (player.health <= 0)
+                game_over();
+    }
+    if (ch1 == 'M' || ch2 == 'M' || ch3 == 'M' || ch4 == 'M' || ch5 == 'M') {
+        player.health -= 4;
+        attron(COLOR_PAIR(2));
+        mvprintw(0,1,"You were hit by Snake! You lost 4 health!           ");
+        attron(COLOR_PAIR(1));
+        mvprintw(1,21,"Health: %d ",player.health);
+        if (player.health <= 0)
+            game_over();
+    }
+    if (ch1 == 'U' || ch2 == 'U' || ch3 == 'U' || ch4 == 'U' || ch5 == 'U') {
+        player.health -= 5;
+        attron(COLOR_PAIR(2));
+        mvprintw(0,1,"You were hit by Unded! You lost 5 health!           ");
+        attron(COLOR_PAIR(1));
+        mvprintw(1,21,"Health: %d ",player.health);
+        if (player.health <= 0)
+            game_over();
+    }
+}
+
+void clean_right_side() {
+    for (int i = 3; i <= 19; i++)
+    {
+        mvprintw(i,80,"                              ");
+    }
+    mvprintw(0,80,"                              ");
+    mvprintw(1,80,"                              ");
+}
+
 void initialize_player() {
     player.gold = 0; player.point = 0; player.health = 100; player.color = 2;
     player.dagger = 0; player.potion_damage = 0;
     player.magic_wand = 0; player.normal_arrow = 0;
     player.sword = 0; player.potion_speed = 0; player.potion_health = 0; player.food = 0;
+    strcpy(player.current_weapon,"Mace");
 }
 
 void initialize_enemy() {
     deamon.woke = 0; snake.woke = 0; undeed.woke = 0; fire.woke = 0; giant.woke = 0;
     deamon.health = 5; snake.health = 20; undeed.health = 30; fire.health = 10; giant.health = 15;
+    deamon.x = 0; deamon.y = 0; snake.y = 0; snake.x = 0;
+    undeed.x = 0; undeed.y = 0; fire.x = 0; fire.y = 0; giant.x = 0; giant.y = 0;
+}
+
+void game_over() {
+    mvprintw(1,21,"Health: %d ",0);
+    mvprintw(0,1,"Game Over!!                                      ");
+    //save_game(0);
+    refresh();
+    napms(5000);
+    refresh();
+    clear();
+    endwin();
+    //main_menu();
 }
 
 // int save_game(int won) {
@@ -1174,3 +1448,10 @@ void initialize_enemy() {
 //     fclose(fg);
 // }
 
+int main() {
+    srand(time(0));
+    initialize_player();
+    make_random_map();
+    endwin();
+    return 0;
+}
