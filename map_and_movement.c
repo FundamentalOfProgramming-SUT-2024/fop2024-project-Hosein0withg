@@ -3,8 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <locale.h>
-#include <wchar.h>
+#include <time.h>
+#include <unistd.h>
+
+// g f i p e are special keys till now
 
 struct position {
     int y;
@@ -17,31 +19,46 @@ struct position2 {
 };
 struct position location;
 struct position2 last_cell;
-int tabaghe = 1;
-struct player_hlth_mny {
+struct position2 last_last_cell;
+struct position2 enemy_location;
+
+int tabaghe = 1, count = 0;
+struct enemy {
+    int health;
+    int woke;
+};
+struct player_health_money_wapon {
     char username[30];
     int color;
+    char current_weapon;
+
     int gold;
     int point;
     int health;
-    char current_weapon;
-    int mace;
+
     int dagger;
     int magic_wand;
     int normal_arrow;
     int sword;
+
     int potion_health;
     int potion_speed;
     int potion_damage;
+
     int food;
 };
-struct player_hlth_mny player;
+struct player_health_money_wapon player;
+struct enemy deamon; struct enemy snake; struct enemy undeed; struct enemy fire; struct enemy giant;
+
 
 int save_game(int won);
 void make_random_map();
 int random_number(int a, int b);
 int valid_move(int x, int y);
 void move_character(int i);
+void move_and_message();
+void initialize_enemy();
+int wake_enemy(int x, int y);
 
 int random_number(int a, int b) {
     int random_number = (rand() % (b - a + 1)) + a;
@@ -193,49 +210,73 @@ int valid_move(int x, int y) {
         return 1;
         break;
     case '^':
-    player.health -= 5;
+        player.health -= 5;
         return 1;
         break;
     case 's':
-    player.potion_speed++;
+        player.potion_speed++;
         return 1;
         break;
     case 'h':
-    player.potion_health++;
+        player.potion_health++;
         return 1;
         break;
     case 'd':
-    player.potion_damage++;
+        player.potion_damage++;
         return 1;
         break;
     case 'S':
-    player.sword++;
+        player.sword++;
         return 1;
         break;
     case 'A':
-    player.normal_arrow++;
+        player.normal_arrow += 20;
         return 1;
         break;
     case 'K':
-    player.dagger++;
+        player.dagger += 10;
         return 1;
         break;
     case 'W':
-    player.magic_wand++;
-        return 1;
-        break;
-    case 'M':
-    player.mace++;
+        player.magic_wand += 8;
         return 1;
         break;
     case 'f':
-    player.food++;
+        player.food++;
         return 1;
         break;
     case '!':
         return 1;
         break;
     }
+    return 0;
+}
+
+int wake_enemy(int x, int y) {
+    char ch1 = mvinch(y-1, x-1) & A_CHARTEXT;
+    char ch2 = mvinch(y-1, x) & A_CHARTEXT;
+    char ch3 = mvinch(y-1, x+1) & A_CHARTEXT;
+    char ch4 = mvinch(y, x-1) & A_CHARTEXT;
+    char ch5 = mvinch(y, x+1) & A_CHARTEXT;
+    char ch6 = mvinch(y+1, x-1) & A_CHARTEXT;
+    char ch7 = mvinch(y+1, x) & A_CHARTEXT;
+    char ch8 = mvinch(y+1, x+1) & A_CHARTEXT;
+
+    if (ch1 == 'D' || ch2 == 'D' || ch3 == 'D' || ch4 == 'D' || ch5 == 'D' || ch6 == 'D' || ch7 == 'D' || ch8 == 'D')
+        return 1;
+
+    if (ch1 == 'F' || ch2 == 'F' || ch3 == 'F' || ch4 == 'F' || ch5 == 'F' || ch6 == 'F' || ch7 == 'F' || ch8 == 'F')
+        return 2;
+
+    if (ch1 == 'G' || ch2 == 'G' || ch3 == 'G' || ch4 == 'G' || ch5 == 'G' || ch6 == 'G' || ch7 == 'G' || ch8 == 'G')
+        return 3;
+
+    if (ch1 == 'M' || ch2 == 'M' || ch3 == 'M' || ch4 == 'M' || ch5 == 'M' || ch6 == 'M' || ch7 == 'M' || ch8 == 'M')
+        return 4;
+
+    if (ch1 == 'U' || ch2 == 'U' || ch3 == 'U' || ch4 == 'U' || ch5 == 'U' || ch6 == 'U' || ch7 == 'U' || ch8 == 'U')
+        return 5;
+    
     return 0;
 }
 
@@ -307,7 +348,7 @@ void make_random_map() {
     mvprintw(1,1,"Gold: %d ",player.gold);
     mvprintw(1,10,"Point: %d ",player.point);
     mvprintw(1,21,"Health: %d ",player.health);
-    for (int i = 0; i < 105; i++)
+    for (int i = 0; i < 110; i++)
     {
         mvaddch(2,i,'-');
         mvaddch(27,i,'_');
@@ -316,10 +357,17 @@ void make_random_map() {
     {
         mvaddch(i,0,'|');
         mvaddch(i,79,'|');
-        mvaddch(i,105,'|');
+        mvaddch(i,110,'|');
     }
+    mvprintw(21,80," ____                         ");
+    mvprintw(22,80,"|  _ \\ ___   __ _ _   _  ___  ");
+    mvprintw(23,80,"| |_) / _ \\ / _` | | | |/ _ \\ ");
+    mvprintw(24,80,"|  _ < (_) | (_| | |_| |  __/ ");
+    mvprintw(25,80,"|_| \\_\\___/ \\__, |\\__,_|\\___| ");
+    mvprintw(26,80,"            |___/");
 
     int pos[15][2];
+    initialize_enemy();
 
     int x,y,tool,arz, door1,door2,door3, m,n;
     int tale1x, tale1y, tale2x, tale2y, tale3x, tale3y, tale4x, tale4y;
@@ -336,8 +384,8 @@ void make_random_map() {
         ganj_room = ((telesm_room + 2) % 5 ) + 1;
     int current_room = 1;
     int black_gold_room = random_number(1,6);
-    int foodx, foody; int finishx, finishy;
-    
+    int foodx, foody; int enemyx, enemyy;
+    int a2 = random_number(1,5);
 
     for (int k = 0; k < 3; k++)
     {
@@ -366,6 +414,7 @@ void make_random_map() {
             telesm1x = random_number(1,tool-1); telesm1y = random_number(1,arz-1);
             weaponx = random_number(1,tool-1); weapony = random_number(1,arz-1);
             foodx = random_number(1,tool-1); foody = random_number(1,arz-1);
+            enemyx = random_number(1,tool-1); enemyy = random_number(1,arz-1);
 
 
 
@@ -403,22 +452,22 @@ void make_random_map() {
                         addch('^');
                         attroff(COLOR_PAIR(1));
                     }
-                    else if ( (current_room == ganj_room) && ((i == telesm1y) && (j == telesm1x)) ) {
+                    else if ( (current_room == telesm_room) && ((i == telesm1y) && (j == telesm1x)) ) {
                         attron(COLOR_PAIR(3));
                         addch('h');
                         attroff(COLOR_PAIR(3));
                     }
-                    else if ( (current_room == ganj_room) && ((i == telesm2y) && (j == telesm2x)) ) {
+                    else if ( (current_room == telesm_room) && ((i == telesm2y) && (j == telesm2x)) ) {
                         attron(COLOR_PAIR(3));
                         addch('d');
                         attroff(COLOR_PAIR(3));
                     }
-                    else if ( (current_room == ganj_room) && ((i == telesm3y) && (j == telesm3x)) ) {
+                    else if ( (current_room == telesm_room) && ((i == telesm3y) && (j == telesm3x)) ) {
                         attron(COLOR_PAIR(3));
                         addch('s');
                         attroff(COLOR_PAIR(3));
                     }
-                    else if ( (current_room != ganj_room) && ((i == telesm1y) && (j == telesm1x)) ) {
+                    else if ( (current_room != telesm_room) && ((i == telesm1y) && (j == telesm1x)) ) {
                         int a = random_number(1,3);
                         attron(COLOR_PAIR(3));
                         switch (a)
@@ -436,12 +485,12 @@ void make_random_map() {
                         attroff(COLOR_PAIR(3));
                     }
                     else if ( (i == weapony) && (j == weaponx) ) {
-                        int a = random_number(1,5);
+                        int a = random_number(1,4);
                         attron(COLOR_PAIR(6));
                         switch (a)
                         {
                         case 1:
-                            addch('M');
+                            addch('S');
                             break;
                         case 2:
                             addch('K');
@@ -452,11 +501,31 @@ void make_random_map() {
                         case 4:
                             addch('A');
                             break;
-                        case 5:
-                            addch('S');
-                            break;
                         }
                         attroff(COLOR_PAIR(6));
+                    }
+                    else if (((tabaghe == 4 && current_room != ganj_room) || (tabaghe != 4)) && (current_room != telesm_room) && (current_room != 6) && (i == enemyy) && (j == enemyx) ) {
+                        a2 = ((a2+2) % 5) + 1;
+                        attron(COLOR_PAIR(2));
+                        switch (a2)
+                        {
+                        case 1:
+                            addch('D');
+                            break;
+                        case 2:
+                            addch('F');
+                            break;
+                        case 3:
+                            addch('G');
+                            break;
+                        case 4:
+                            addch('M');
+                            break;
+                        case 5:
+                            addch('U');
+                            break;
+                        }
+                        attroff(COLOR_PAIR(2));
                     }
                     else if ((i == foody) && (j == foodx)) {
                         attron(COLOR_PAIR(7));
@@ -551,18 +620,38 @@ void make_random_map() {
 
     if (pos[13][1] > pos[14][1]) hallway_ur(pos[14][0],pos[14][1],pos[13][0],pos[13][1]);
     else hallway_ul(pos[14][0],pos[14][1],pos[13][0],pos[13][1]);
-    
 
     attroff(COLOR_PAIR(1));
-    
+
+    move_and_message();
+}
+
+void move_and_message() {
+    noecho();
+    curs_set(0);
+    start_color();
+    keypad(stdscr, TRUE);
+    init_pair(1,COLOR_CYAN,COLOR_BLACK);
+    init_pair(2,COLOR_RED,COLOR_BLACK);
+    init_pair(3,COLOR_MAGENTA,COLOR_BLACK);
+    init_pair(4,COLOR_YELLOW,COLOR_BLACK);
+    init_pair(5,COLOR_BLUE,COLOR_BLACK);
+    init_pair(6,COLOR_GREEN,COLOR_BLACK);
+    init_pair(7,COLOR_WHITE,COLOR_BLACK);
+
     int ch, ch2;
     attron(COLOR_PAIR(player.color));
     mvaddch(location.y,location.x,'@');
+
     last_cell.y = location.y; last_cell.x = location.x; last_cell.s = '.';
+    enemy_location.y = last_cell.y; enemy_location.x = last_cell.x; enemy_location.s = '.';
+    last_last_cell.y = enemy_location.y; last_last_cell.x = enemy_location.x; last_last_cell.s = '.';
     while (1)
     {
         ch = getch();
+
         if (ch == 'q') break;
+
         else if (ch == 'g') {
             ch2 = getch();
             move_character(ch2);
@@ -601,12 +690,12 @@ void make_random_map() {
                 if (player.health == 0) {
                     mvprintw(1,21,"Health: %d ",0);
                     mvprintw(0,1,"Game Over!!                             ");
-                    save_game(0);
+                    //save_game(0);
                     refresh();
                     napms(5000);
                     refresh();
                     clear();
-                    main_menu();
+                    //main_menu();
                 }
                 attroff(COLOR_PAIR(1));
                 attron(COLOR_PAIR(player.color));
@@ -633,8 +722,8 @@ void make_random_map() {
                 break;
             case 'S':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You ignored the 'damage sword'!                         ");
-                player.sword--;
+                mvprintw(0,1,"You ignored the 'sword'!                                ");
+                if (player.sword == 1) player.sword = 0;
                 break;
             case 'W':
                 attron(COLOR_PAIR(1));
@@ -645,11 +734,6 @@ void make_random_map() {
                 attron(COLOR_PAIR(1));
                 mvprintw(0,1,"You ignored the 'dagger'!                              ");
                 player.dagger--;
-                break;
-            case 'M':
-                attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You ignored the 'mace'!                                 ");
-                player.mace--;
                 break;
             case 'f':
                 attron(COLOR_PAIR(1));
@@ -701,12 +785,12 @@ void make_random_map() {
                     if (player.health == 0) {
                         mvprintw(1,21,"Health: %d ",0);
                         mvprintw(0,1,"Game Over!!                              ");
-                        save_game(0);
+                        //save_game(0);
                         refresh();
                         napms(5000);
                         refresh();
                         clear();
-                        main_menu();
+                        //main_menu();
                     }
                     attroff(COLOR_PAIR(1));
                     attron(COLOR_PAIR(player.color));
@@ -733,7 +817,7 @@ void make_random_map() {
                     break;
                 case 'S':
                     attron(COLOR_PAIR(1));
-                    mvprintw(0,1,"You add 1 'sword' to your backpack!                    ");
+                    mvprintw(0,1,"You add 'sword' to your backpack!                     ");
                     last_cell.s = '.';
                     break;
                 case 'W':
@@ -746,11 +830,6 @@ void make_random_map() {
                     mvprintw(0,1,"You add 1 'dagger' to your backpack!                 ");
                     last_cell.s = '.';
                     break;
-                case 'M':
-                    attron(COLOR_PAIR(1));
-                    mvprintw(0,1,"You add 1 'mace' to your backpack!                   ");
-                    last_cell.s = '.';
-                    break;
                 case 'f':
                     attron(COLOR_PAIR(1));
                     mvprintw(0,1,"You add 1 'food' to your backpack!                   ");
@@ -759,12 +838,12 @@ void make_random_map() {
                 case '!':
                     attron(COLOR_PAIR(2));
                     mvprintw(0,1,"Congratulations!! You've finished Rouge successfully!!");
-                    save_game(1);
+                    //save_game(1);
                     refresh();
                     napms(5000);
                     refresh();
                     clear();
-                    main_menu();
+                    //main_menu();
                     break;
                 }
                 last_cell.y = location.y; last_cell.x = location.x;
@@ -799,9 +878,9 @@ void make_random_map() {
         else if (ch == 'p') {
             attron(COLOR_PAIR(2));
             mvprintw(0,87,"Potion Menu");
-            mvprintw(4,83,"Health Potion:    %d   ",player.mace);
-            mvprintw(5,83,"Speed Potion:     %d   ",player.dagger);
-            mvprintw(6,83,"Damage Potion:    %d   ",player.magic_wand);
+            mvprintw(4,83,"Health Potion:    %d   ",player.potion_health);
+            mvprintw(5,83,"Speed Potion:     %d   ",player.potion_speed);
+            mvprintw(6,83,"Damage Potion:    %d   ",player.potion_damage);
             mvprintw(7,81,"                      ");
             mvprintw(8,81,"                      ");
             mvprintw(9,81,"                      ");
@@ -811,12 +890,12 @@ void make_random_map() {
         else if (ch == 'i') {
             attron(COLOR_PAIR(2));
             mvprintw(0,87,"Weapon Menu");
-            mvprintw(4,83,"Mace:          %d   ",player.mace);
-            mvprintw(5,83,"Dagger:        %d   ",player.dagger);
-            mvprintw(6,83,"Magic Wand:    %d   ",player.magic_wand);
-            mvprintw(7,83,"Normal Arrow:  %d   ",player.normal_arrow);
-            mvprintw(8,83,"Sword:         %d   ",player.sword);
-            mvprintw(9,81,"                      ");
+            mvprintw(4,80,"weapon     dmg  rng  lft");
+            mvprintw(5,80,"Mace:      5    1    inf");
+            mvprintw(6,80,"Dagger(K): 12   5    %d  ",player.dagger);
+            mvprintw(7,80,"Wand(W):   15   10   %d  ",player.magic_wand);
+            mvprintw(8,80,"Arrow(A):  5    5    %d  ",player.normal_arrow);
+            player.sword == 1 ? mvprintw(9,80,"Sword(S):  10   1    Yes") : mvprintw(9,80,"Sword(S):  10   1    No ");
             mvprintw(10,81,"                      ");
         }
 
@@ -830,13 +909,22 @@ void make_random_map() {
             mvprintw(9,81,"                      ");
             mvprintw(10,81,"                      ");
 
+
             move_character(ch);
             attroff(COLOR_PAIR(player.color));
             attron(COLOR_PAIR(1));
+
             mvaddch(last_cell.y,last_cell.x,last_cell.s);
+            mvaddch(last_last_cell.y,last_last_cell.x,last_last_cell.s);
+
             attroff(COLOR_PAIR(1));
             attron(COLOR_PAIR(player.color));
+
             last_cell.s = mvinch(location.y,location.x);
+            last_last_cell.s = mvinch(enemy_location.y,enemy_location.x);
+
+            
+
 
 
             switch (last_cell.s)
@@ -866,12 +954,12 @@ void make_random_map() {
                 if (player.health == 0) {
                     mvprintw(1,21,"Health: %d ",0);
                     mvprintw(0,1,"Game Over!!                               ");
-                    save_game(0);
+                    //save_game(0);
                     refresh();
                     napms(5000);
                     refresh();
                     clear();
-                    main_menu();
+                    //main_menu();
                 }
                 attroff(COLOR_PAIR(1));
                 attron(COLOR_PAIR(player.color));
@@ -898,7 +986,7 @@ void make_random_map() {
                 break;
             case 'S':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You add 1 'sword' to your backpack!                    ");
+                mvprintw(0,1,"You add 'sword' to your backpack!                      ");
                 last_cell.s = '.';
                 break;
             case 'W':
@@ -911,11 +999,6 @@ void make_random_map() {
                 mvprintw(0,1,"You add 1 'dagger' to your backpack!                 ");
                 last_cell.s = '.';
                 break;
-            case 'M':
-                attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You add 1 'mace' to your backpack!                   ");
-                last_cell.s = '.';
-                break;
             case 'f':
                 attron(COLOR_PAIR(1));
                 mvprintw(0,1,"You add 1 'food' to your backpack!                   ");
@@ -924,15 +1007,65 @@ void make_random_map() {
             case '!':
                 attron(COLOR_PAIR(2));
                 mvprintw(0,1,"Congratulations!! You've finished Rouge successfully!!");
-                save_game(1);
+                //save_game(1);
                 refresh();
                 napms(5000);
                 refresh();
                 clear();
-                main_menu();
+                //main_menu();
                 break;
             }
+
+            if (deamon.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 1)
+                deamon.woke = 1;
+
+            if (deamon.woke == 1) {
+                attron(COLOR_PAIR(2));
+                mvaddch(enemy_location.y,enemy_location.x,'D');
+                attroff(COLOR_PAIR(2));
+            }
+
+            if (fire.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 2)
+                fire.woke = 1;
+
+            if (fire.woke == 1) {
+                attron(COLOR_PAIR(2));
+                mvaddch(enemy_location.y,enemy_location.x,'F');
+                attroff(COLOR_PAIR(2));
+            }
+
+            if (giant.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 3)
+                giant.woke = 1;
+
+            if (giant.woke == 1) {
+                attron(COLOR_PAIR(2));
+                mvaddch(enemy_location.y,enemy_location.x,'G');
+                attroff(COLOR_PAIR(2));
+            }
+
+            if (snake.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 4)
+                snake.woke = 1;
+
+            if (snake.woke == 1) {
+                attron(COLOR_PAIR(2));
+                mvaddch(enemy_location.y,enemy_location.x,'M');
+                attroff(COLOR_PAIR(2));
+            }
+
+            if (undeed.woke == 0 && wake_enemy(last_last_cell.x,last_last_cell.y) == 5)
+                undeed.woke = 1;
+
+            if (undeed.woke == 1) {
+                attron(COLOR_PAIR(2));
+                mvaddch(enemy_location.y,enemy_location.x,'U');
+                attroff(COLOR_PAIR(2));
+            }
+
+            last_last_cell.y = enemy_location.y; last_last_cell.x = enemy_location.x;
+            enemy_location.y = last_cell.y; enemy_location.x = last_cell.x;
             last_cell.y = location.y; last_cell.x = location.x;
+            
+            attron(COLOR_PAIR(player.color));
             mvaddch(location.y,location.x,'@');
         }
     }
@@ -941,101 +1074,103 @@ void make_random_map() {
     refresh();
 }
 
-void initalize_player() {
+void initialize_player() {
     player.gold = 0; player.point = 0; player.health = 100; player.color = 2;
-    player.mace = 1; player.dagger = 0; player.potion_damage = 0;
+    player.dagger = 0; player.potion_damage = 0;
     player.magic_wand = 0; player.normal_arrow = 0;
     player.sword = 0; player.potion_speed = 0; player.potion_health = 0; player.food = 0;
 }
 
-int save_game(int won) {
-    if (strcmp(player.username,"guest") == 0) return 0;
-    FILE* user = fopen("username.txt","r");
-    FILE* gold = fopen("gold.txt","r");
-    FILE* point = fopen("points.txt","r");
-    FILE* sg = fopen("started_game_number.txt","r");
-    FILE* fg = fopen("finished_game_number.txt","r");
-    char u[30]; int line = 0; int x = 0;
-    char g[6], s[6], f[6], p[6]; int g2=0, s2=0, f2=0, p2=0;
-    int g3[50], s3[50], f3[50], p3[50];
-    while (fgets(u,30,user) != NULL)
-    {
-        u[strlen(u)-1] = '\0';
-        if (strcmp(u,player.username) == 0) break;
-        line++;
-    }
-
-    while (fgets(g,4,gold) != NULL)
-    {
-        g[strlen(g)-1] = '\0';
-        sscanf(g,"%d",&g2);
-        if (x == line) {
-            g2 += player.gold;
-        }
-        g3[x] = g2;
-        x++;
-    }
-    fclose(gold);
-    gold = fopen("gold.txt","w");
-    for (int i = 0; i < x; i++)
-    {
-        fprintf(gold,"%d\n",g3[i]);
-    }
-    fclose(gold); x = 0;
-
-    while (fgets(p,4,point) != NULL)
-    {
-        p[strlen(p)-1] = '\0';
-        sscanf(p,"%d",&p2);
-        if (x == line) {
-            p2 += player.point;
-        }
-        p3[x] = p2;
-        x++;
-    }
-    fclose(point);
-    point = fopen("points.txt","w");
-    for (int i = 0; i < x; i++)
-    {
-        fprintf(point,"%d\n",p3[i]);
-    }
-    fclose(point); x = 0;
-
-    while (fgets(s,4,sg) != NULL)
-    {
-        s[strlen(s)-1] = '\0';
-        sscanf(s,"%d",&s2);
-        if (x == line) {
-            s2++;
-        }
-        s3[x] = s2;
-        x++;
-    }
-    fclose(sg);
-    sg = fopen("started_game_number.txt","w");
-    for (int i = 0; i < x; i++)
-    {
-        fprintf(sg,"%d\n",s3[i]);
-    }
-    fclose(sg); x = 0;
-    if (won != 1)
-        return 0;
-    
-    while (fgets(f,4,fg) != NULL)
-    {
-        f[strlen(f)-1] = '\0';
-        sscanf(f,"%d",&f2);
-        if (x == line) {
-            f2++;
-        }
-        f3[x] = f2;
-        x++;
-    }
-    fclose(fg);
-    fg = fopen("finished_game_number.txt","w");
-    for (int i = 0; i < x; i++)
-    {
-        fprintf(fg,"%d\n",f3[i]);
-    }
-    fclose(fg);
+void initialize_enemy() {
+    deamon.woke = 0; snake.woke = 0; undeed.woke = 0; fire.woke = 0; giant.woke = 0;
+    deamon.health = 5; snake.health = 20; undeed.health = 30; fire.health = 10; giant.health = 15;
 }
+
+// int save_game(int won) {
+//     if (strcmp(player.username,"guest") == 0) return 0;
+//     FILE* user = fopen("username.txt","r");
+//     FILE* gold = fopen("gold.txt","r");
+//     FILE* point = fopen("points.txt","r");
+//     FILE* sg = fopen("started_game_number.txt","r");
+//     FILE* fg = fopen("finished_game_number.txt","r");
+//     char u[30]; int line = 0; int x = 0;
+//     char g[6], s[6], f[6], p[6]; int g2=0, s2=0, f2=0, p2=0;
+//     int g3[50], s3[50], f3[50], p3[50];
+//     while (fgets(u,30,user) != NULL)
+//     {
+//         u[strlen(u)-1] = '\0';
+//         if (strcmp(u,player.username) == 0) break;
+//         line++;
+//     }
+//     while (fgets(g,4,gold) != NULL)
+//     {
+//         g[strlen(g)-1] = '\0';
+//         sscanf(g,"%d",&g2);
+//         if (x == line) {
+//             g2 += player.gold;
+//         }
+//         g3[x] = g2;
+//         x++;
+//     }
+//     fclose(gold);
+//     gold = fopen("gold.txt","w");
+//     for (int i = 0; i < x; i++)
+//     {
+//         fprintf(gold,"%d\n",g3[i]);
+//     }
+//     fclose(gold); x = 0;
+//     while (fgets(p,4,point) != NULL)
+//     {
+//         p[strlen(p)-1] = '\0';
+//         sscanf(p,"%d",&p2);
+//         if (x == line) {
+//             p2 += player.point;
+//         }
+//         p3[x] = p2;
+//         x++;
+//     }
+//     fclose(point);
+//     point = fopen("points.txt","w");
+//     for (int i = 0; i < x; i++)
+//     {
+//         fprintf(point,"%d\n",p3[i]);
+//     }
+//     fclose(point); x = 0;
+//     while (fgets(s,4,sg) != NULL)
+//     {
+//         s[strlen(s)-1] = '\0';
+//         sscanf(s,"%d",&s2);
+//         if (x == line) {
+//             s2++;
+//         }
+//         s3[x] = s2;
+//         x++;
+//     }
+//     fclose(sg);
+//     sg = fopen("started_game_number.txt","w");
+//     for (int i = 0; i < x; i++)
+//     {
+//         fprintf(sg,"%d\n",s3[i]);
+//     }
+//     fclose(sg); x = 0;
+//     if (won != 1)
+//         return 0;
+//     while (fgets(f,4,fg) != NULL)
+//     {
+//         f[strlen(f)-1] = '\0';
+//         sscanf(f,"%d",&f2);
+//         if (x == line) {
+//             f2++;
+//         }
+//         f3[x] = f2;
+//         x++;
+//     }
+//     fclose(fg);
+//     fg = fopen("finished_game_number.txt","w");
+//     for (int i = 0; i < x; i++)
+//     {
+//         fprintf(fg,"%d\n",f3[i]);
+//     }
+//     fclose(fg);
+// }
+
