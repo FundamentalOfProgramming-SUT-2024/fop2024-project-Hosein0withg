@@ -21,7 +21,7 @@ struct position2 last_cell;
 struct position2 last_last_cell;
 struct position2 enemy_location;
 
-int tabaghe = 4; int count_hungry = 0, count_hpotion = 0,count_spotion = 0,count_dpotion = 0; int max_health = 100; //update
+int tabaghe = 1; int count_hungry = 0, count_hpotion = 0,count_spotion = 0,count_dpotion = 0; int max_health = 100; //update
 struct enemy {
     int health;
     int woke;
