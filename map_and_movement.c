@@ -21,7 +21,8 @@ struct position2 last_cell;
 struct position2 last_last_cell;
 struct position2 enemy_location;
 
-int tabaghe = 1; int count_hungry = 0, count_hpotion = 0,count_spotion = 0,count_dpotion = 0; int max_health = 100; //update
+int tabaghe = 1; int count_hungry = 0, count_hpotion = 0,count_spotion = 0,count_dpotion = 0, food_change = 0, sfood_change = 0, dfood_change = 0;
+int max_health = 100; //update
 struct enemy {
     int health;
     int woke;
@@ -52,6 +53,8 @@ struct player_health_money_wapon {
     int pd_on;
 
     int food;
+    int damage_food;
+    int speed_food;
     int energy;
 };
 struct player_health_money_wapon player;
@@ -255,6 +258,14 @@ int valid_move(int x, int y) {
         break;
     case 'f':
         player.food++;
+        return 1;
+        break;
+    case '&':
+        player.damage_food++;
+        return 1;
+        break;
+    case '%':
+        player.speed_food++;
         return 1;
         break;
     case '!':
@@ -646,7 +657,19 @@ void make_random_map() {
                     }
                     else if ((i == foody) && (j == foodx)) {
                         attron(COLOR_PAIR(7));
-                        addch('f');
+                        int frand = random_number(1,3);
+                        switch (frand)
+                        {
+                        case 1:
+                            addch('f');
+                            break;
+                        case 2:
+                            addch('&');
+                            break;
+                        case 3:
+                            addch('%');
+                            break;
+                        }
                         attroff(COLOR_PAIR(7));
                     }
                     else if (tabaghe == 4 && current_room == ganj_room && (i == enemyy) && (j == enemyx)) {
@@ -782,7 +805,9 @@ void move_and_message() {
         ch = getch();
         int direction;
 
-        if (ch == 'q') break;
+        if (ch == 'q') {
+            break; //
+        }
 
         else if (ch == ' ') {
             if (player.pd_on == 0) {
@@ -1333,6 +1358,16 @@ void move_and_message() {
                 mvprintw(0,1,"You ignored the 'Food'!                                              ");
                 player.food--;
                 break;
+            case '%':
+                attron(COLOR_PAIR(1));
+                mvprintw(0,1,"You ignored the 'Speed Food'!                                        ");
+                player.food--;
+                break;
+            case '&':
+                attron(COLOR_PAIR(1));
+                mvprintw(0,1,"You ignored the 'Power Food'!                                        ");
+                player.food--;
+                break;
             }
             last_cell.y = location.y; last_cell.x = location.x;
             mvaddch(location.y,location.x,'@');
@@ -1380,10 +1415,10 @@ void move_and_message() {
                     attron(COLOR_PAIR(player.color));
                     break;
                 case 's':
-                attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You add 1 'Speed Potion' to your backpack!                                  ");
-                last_cell.s = '.';
-                break;
+                    attron(COLOR_PAIR(1));
+                    mvprintw(0,1,"You add 1 'Speed Potion' to your backpack!                                  ");
+                    last_cell.s = '.';
+                    break;
                 case 'h':
                     attron(COLOR_PAIR(1));
                     mvprintw(0,1,"You add 1 'Health Potion' to your backpack!                             ");
@@ -1419,6 +1454,18 @@ void move_and_message() {
                     mvprintw(0,1,"You add 1 'Food' to your backpack!                                      ");
                     last_cell.s = '.';
                     break;
+                case '%':
+                    attron(COLOR_PAIR(1));
+                    mvprintw(0,1,"You add 1 'Speed Food' to your backpack!                              ");
+                    sfood_change = 0;
+                    last_cell.s = '.';
+                    break;
+                case '&':
+                    attron(COLOR_PAIR(1));
+                    mvprintw(0,1,"You add 1 'Power Food' to your backpack!                              ");
+                    dfood_change = 0;
+                    last_cell.s = '.';
+                    break;
                 case '!':
                     attron(COLOR_PAIR(2));
                     mvprintw(0,1,"Congratulations!! You've finished Rouge successfully!!                  ");
@@ -1431,6 +1478,7 @@ void move_and_message() {
                     break;
                 }
                 last_cell.y = location.y; last_cell.x = location.x;
+                attron(COLOR_PAIR(player.color));
                 mvaddch(location.y,location.x,'@');
                 }
         }
@@ -1439,24 +1487,62 @@ void move_and_message() {
             attron(COLOR_PAIR(2));
             clean_right_side();
             mvprintw(0,87,"Food Menu");
-            mvprintw(4,83,"Normal Food:    %d   ",player.food);
-            mvprintw(5,83,"Suoreme Food:   0   ");
-            mvprintw(6,83,"Magic Food:     0   ");
-            mvprintw(7,83,"Corrupt Food:   0   ");
-            mvprintw(8,81,"                      ");
-            mvprintw(9,83,"press enter to eat");
-            mvprintw(10,83,"a piece of food...");
-            int ch3 = getch();
-            if ((ch3 == 10) && (player.food > 0)) {
+            mvprintw(4,83,"Normal Food(f):    %d   ",player.food);
+            mvprintw(5,83,"Power Food(p):     %d   ",player.damage_food);
+            mvprintw(6,83,"Speed Food(s):     %d   ",player.speed_food);
+            mvprintw(8,81,"press one of these {f,p,s}");
+
+            char com; com = getch();
+
+            if (com == 'f') {
+                attron(COLOR_PAIR(1));
+                if (player.food == 0)
+                {
+                    mvprintw(0,1,"You don't have any Normal Food!                                          ");
+                    continue;
+                }
                 player.food--;
-                player.energy = 5;
+                player.energy = 5; player.health += 3;
                 attron(COLOR_PAIR(1));
                 mvprintw(1,33,"Energy: %d ",player.energy);
-                mvprintw(0,1,"You ate a food and your energy was refreshed!                         ");
+                mvprintw(1,21,"Health: %d ",player.health);
+                mvprintw(0,1,"You ate a Normal Food and your energy was refreshed!                      ");
+                attron(COLOR_PAIR(2));
+                mvprintw(4,83,"Normal Food:    %d   ",player.food);
             }
-            else if ((ch3 == 10) && (player.food == 0)) {
+
+            if (com == 's') {
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"Sorry! You don't have any food!                                       ");
+                if (player.speed_food == 0)
+                {
+                    mvprintw(0,1,"You don't have any Speed Food!                                          ");
+                    continue;
+                }
+                mvprintw(0,1,"You ate a Speed Food and you can walk fast!                           ");
+                player.speed_food--;
+                count_spotion = 0; player.ps_on = 1;
+                player.energy = 5; player.health += 3;
+                mvprintw(1,33,"Energy: %d ",player.energy);
+                mvprintw(1,21,"Health: %d ",player.health);
+                attron(COLOR_PAIR(2));
+                mvprintw(6,83,"Speed Food(s):     %d   ",player.speed_food);
+            }
+
+            if (com == 'p') {
+                attron(COLOR_PAIR(1));
+                if (player.damage_food == 0)
+                {
+                    mvprintw(0,1,"You don't have any Power Food!                                          ");
+                    continue;
+                }
+                mvprintw(0,1,"You ate a Power Food! weapon's power has been boosted!                ");
+                player.damage_food--;
+                count_dpotion = 0; player.pd_on = 1;
+                player.energy = 5; player.health += 3;
+                mvprintw(1,33,"Energy: %d ",player.energy);
+                mvprintw(1,21,"Health: %d ",player.health);
+                attron(COLOR_PAIR(2));
+                mvprintw(5,83,"Power Food(p):     %d   ",player.damage_food);
             }
         }
 
@@ -1758,7 +1844,31 @@ void move_and_message() {
                 break;
             case 'f':
                 attron(COLOR_PAIR(1));
-                mvprintw(0,1,"You add 1 'Food' to your backpack!                                      ");
+                int currupt = random_number(1,3);
+                if (currupt == 3)
+                {
+                    mvprintw(0,1,"You ate a 'Currupted Food' and lost 5 health!                           ");
+                    player.food--;
+                    player.health-=5;
+                    mvprintw(1,21,"Health: %d ",player.health);
+                    check_game_over();
+                }
+                else {
+                    mvprintw(0,1,"You add 1 'Food' to your backpack!                                      ");
+                    food_change = 0;
+                }
+                last_cell.s = '.';
+                break;
+            case '&':
+                attron(COLOR_PAIR(1));
+                mvprintw(0,1,"You add 1 'Power Food' to your backpack!                              ");
+                dfood_change = 0;
+                last_cell.s = '.';
+                break;
+            case '%':
+                attron(COLOR_PAIR(1));
+                mvprintw(0,1,"You add 1 'Speed Food' to your backpack!                              ");
+                sfood_change = 0;
                 last_cell.s = '.';
                 break;
             case '!':
@@ -1902,7 +2012,7 @@ void move_and_message() {
             mvaddch(location.y,location.x,'@');
 
 
-            count_hungry++; count_hpotion++; count_spotion++; count_dpotion++;
+            count_hungry++; count_hpotion++; count_spotion++; count_dpotion++; food_change++; sfood_change++; dfood_change++;
             if (count_hungry == 10)
             {
                 count_hungry = 0;
@@ -1939,6 +2049,27 @@ void move_and_message() {
                 }
             }
             if (count_hpotion == 10) player.ph_on == 0; if (count_spotion == 10) player.ps_on == 0; if (count_dpotion == 10) player.pd_on == 0;
+
+            if (food_change == 20 && player.food > 0)
+            {
+                food_change == 0; player.food--;
+                attron(COLOR_PAIR(1));
+                mvprintw(0,1,"1 of your Normal Food was currupted!                                  ");
+            }
+
+            if (sfood_change == 20 && player.speed_food > 0)
+            {
+                sfood_change == 0; player.speed_food--; player.food++;
+                attron(COLOR_PAIR(1));
+                mvprintw(0,1,"1 of your Speed Food became Normal Food!                              ");
+            }
+
+            if (dfood_change == 20 && player.damage_food > 0)
+            {
+                dfood_change == 0; player.damage_food--; player.food++;
+                attron(COLOR_PAIR(1));
+                mvprintw(0,1,"1 of your Damage Food became Normal Food!                              ");
+            }
         }
     }
     attroff(COLOR_PAIR(player.color));

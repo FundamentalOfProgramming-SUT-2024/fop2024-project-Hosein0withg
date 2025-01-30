@@ -5,6 +5,11 @@
 #include <ctype.h>
 #include <locale.h>
 #include <wchar.h>
+#include <time.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_mixer.h>
+#include <unistd.h>
+
 
 struct position {
     int y;
@@ -17,7 +22,7 @@ struct position2 {
 };
 struct position location;
 struct position2 last_cell;
-int tabaghe = 1;
+int tabaghe = 1; char string[20] = "";
 struct player_hlth_mny {
     char username[30];
     int color;
@@ -50,7 +55,16 @@ void new_user();
 int correct_password(char str[30]);
 int correct_email(char str[30]);
 void main_menu();
+int initSDL();
+int music(char name[30]);
+Mix_Music* playmusic(const char* musicFile);
+void pass_gen();
+int random_number(int a, int b);
 
+int random_number(int a, int b) {
+    int random_number = (rand() % (b - a + 1)) + a;
+    return random_number;
+}
 
 void scoreboard1(char name[30]) {
     setlocale(LC_ALL, "");
@@ -168,7 +182,7 @@ void scoreboard1(char name[30]) {
     mvprintw((q+1),58,"%-5d",top_fg[q]); mvprintw((q+1),64,"%-3d",top_sg[q]);
     if (strcmp(name,top_user[4]) == 0) attroff(A_BOLD | A_UNDERLINE);
 
-    attron(COLOR_PAIR(1));
+    attron(COLOR_PAIR(4));
     const char *menu[] = {"next page", "back to the game menu"};
     int choice = 0;
     while (1)
@@ -259,6 +273,9 @@ void scoreboard2(char name[30]) {
     keypad(stdscr, TRUE);
     noecho();
     init_pair(1,COLOR_WHITE,COLOR_GREEN);
+    init_pair(2,COLOR_WHITE,COLOR_RED);
+    init_pair(3,COLOR_WHITE,COLOR_YELLOW);
+    init_pair(4,COLOR_WHITE,COLOR_BLUE);
     move(0,0);
     printw("|rank| username                               |point|gold|fgame|exp|\n");
 
@@ -307,7 +324,7 @@ void scoreboard2(char name[30]) {
     mvprintw((q-4),58,"%-5d",top_fg[q]); mvprintw((q-4),64,"%-3d",top_sg[q]);
     if (strcmp(name,top_user[9]) == 0) attroff(A_BOLD | A_UNDERLINE);
 
-    attron(COLOR_PAIR(1));
+    attron(COLOR_PAIR(4));
     const char *menu[] = {"last page", "back to the game menu"};
     int choice = 0;
     while (1)
@@ -355,7 +372,7 @@ void game_menu_user(char name[30]) {
     start_color();
     keypad(stdscr, TRUE);
     noecho();
-    init_pair(1,COLOR_WHITE,COLOR_GREEN);
+    init_pair(1,COLOR_WHITE,COLOR_BLUE);
     attron(COLOR_PAIR(1));
     const char *menu[] = {"New Game", "Load Game","Settings","Scoreboard","Back"};
     int choice = 0;
@@ -381,7 +398,7 @@ void game_menu_user(char name[30]) {
     {
     case 0:
         tabaghe = 1;
-        make_random_map();
+        //make_random_map();
         break;
     case 1:
         main_menu();
@@ -402,6 +419,30 @@ void game_menu_user(char name[30]) {
     refresh();
 }
 
+void pass_gen() {
+    int len = random_number(8,12); int a=0, a1=0,a2=0,a3=0;
+    for (int i = 0; i < len; i++)
+    {
+        a = random_number(1,3);
+        switch (a)
+        {
+        case 1:
+            a1 = random_number(48,57);
+            string[i] = (char)(a1);
+            break;
+        case 2:
+            a2 = random_number(65,90);
+            string[i] = (char)(a2);
+            break;
+        case 3:
+            a3 = random_number(97,122);
+            string[i] = (char)(a3);
+            break;
+        }
+    }
+    string[len] = '\0';
+}
+
 void hero_color(char name[30]) {
     initscr();
     clear();
@@ -409,7 +450,7 @@ void hero_color(char name[30]) {
     start_color();
     keypad(stdscr, TRUE);
     noecho();
-    init_pair(1,COLOR_WHITE,COLOR_GREEN);
+    init_pair(1,COLOR_WHITE,COLOR_BLUE);
     attron(COLOR_PAIR(1));
     const char *menu[] = {"Red", "Green", "Purple","Yellow"};
     int choice = 0;
@@ -460,7 +501,7 @@ void difficulty(char name[30]) {
     start_color();
     keypad(stdscr, TRUE);
     noecho();
-    init_pair(1,COLOR_WHITE,COLOR_GREEN);
+    init_pair(1,COLOR_WHITE,COLOR_BLUE);
     attron(COLOR_PAIR(1));
     const char *menu[] = {"Amatur", "Regular", "Profesioanl"};
     int choice = 0;
@@ -508,13 +549,13 @@ void setting(char name[30]) {
     start_color();
     keypad(stdscr, TRUE);
     noecho();
-    init_pair(1,COLOR_WHITE,COLOR_GREEN);
+    init_pair(1,COLOR_WHITE,COLOR_BLUE);
     attron(COLOR_PAIR(1));
-    const char *menu[] = {"Difficulty", "Color of Hero", "Back"};
+    const char *menu[] = {"Difficulty", "Color of Hero", "Music", "Back"};
     int choice = 0;
     while (1)
     {
-        for (int i = 0; i < 3; ++i)
+        for (int i = 0; i < 4; ++i)
         {
             if (i == choice)
                 attron(A_REVERSE);
@@ -524,9 +565,9 @@ void setting(char name[30]) {
         }
         int ch = getch();
         if (ch == KEY_UP)
-            choice = (choice == 0) ? 2 : choice - 1;
+            choice = (choice == 0) ? 3 : choice - 1;
         else if (ch == KEY_DOWN)
-            choice = (choice == 2) ? 0 : choice + 1;
+            choice = (choice == 3) ? 0 : choice + 1;
         else if (ch == 10)
             break;
     }
@@ -539,6 +580,9 @@ void setting(char name[30]) {
         hero_color(name);
         break;
     case 2:
+        music(name);
+        break;
+    case 3:
         game_menu_user(name);
         break;
     }
@@ -574,6 +618,12 @@ int check_login(char username[30], char password[30]) {
     if (p == 0)
     {
         printw("password is incorrect!\n");
+        printw("Press x to see your password!\n");
+        char x = getch();
+        if (x == 'x')
+        {
+            printw("[%s]\n",pass2);
+        }
         return 0;
     }
     if (p && u)
@@ -590,7 +640,7 @@ void login_menu() {
     start_color();
     keypad(stdscr, TRUE);
     noecho();
-    init_pair(1,COLOR_WHITE,COLOR_GREEN);
+    init_pair(1,COLOR_WHITE,COLOR_BLUE);
     attron(COLOR_PAIR(1));
     const char *menu[] = {"login to your account", "login as guest", "Back"};
     int choice = 0;
@@ -628,6 +678,7 @@ void login_menu() {
             scanw("%s",username);
             printw("Enter Password: ");
             scanw("%s",password);
+
         }
         strcpy(player.username,username);
         attroff(COLOR_PAIR(1));
@@ -641,7 +692,7 @@ void login_menu() {
         refresh();
         clear();
         strcpy(player.username,"guest");
-        make_random_map();
+        //make_random_map();
         break;
     case 2:
         refresh();
@@ -668,6 +719,16 @@ void new_user() {
     FILE *user = fopen("username.txt", "a+");
     FILE *pass = fopen("password.txt", "a+");
     FILE *em = fopen("email.txt", "a+");
+    
+    FILE *gold = fopen("gold.txt", "a+");
+    FILE *point = fopen("points.txt", "a+");
+    FILE *fg = fopen("finished_game_number.txt", "a+");
+    FILE *sg = fopen("started_game_number.txt", "a+");
+    fprintf(gold,"0\n");
+    fprintf(point,"0\n");
+    fprintf(fg,"0\n");
+    fprintf(sg,"0\n");
+    fclose(gold); fclose(point); fclose(fg); fclose(sg);
     
     while (1)
     {
@@ -701,6 +762,10 @@ void new_user() {
         if (strlen(password) < 7)
         {
             printw("it must be at least 7 charachters!\n");
+        }
+        if (!correct_password(password) || strlen(password) < 7) {
+            pass_gen();
+            printw("Here is a suggested password which were created randomly: %s\n",string);
         }
         if (correct_password(password) && (strlen(password) >= 7))
         {
@@ -778,13 +843,21 @@ void main_menu() {
     start_color();
     keypad(stdscr, TRUE);
     noecho();
-    init_pair(1,COLOR_WHITE,COLOR_GREEN);
+    init_pair(1,COLOR_WHITE,COLOR_BLUE);
+    init_pair(2,COLOR_WHITE,COLOR_BLACK);
+    attron(COLOR_PAIR(2));
+    mvprintw(1,20,"__        __   _                               _             ____                        ");
+    mvprintw(2,20,"\\ \\      / /__| | ___ ___  _ __ ___   ___     | |_ ___      |  _ \\ ___   __ _ _   _  ___ ");
+    mvprintw(3,20," \\ \\ /\\ / / _ \\ |/ __/ _ \\| '_ ` _ \\ / _ \\    | __/ _ \\     | |_) / _ \\ / _` | | | |/ _ \\");
+    mvprintw(4,20,"  \\ V  V /  __/ | (_| (_) | | | | | |  __/    | || (_) |    |  _ < (_) | (_| | |_| |  __/");
+    mvprintw(5,20,"   \\_/\\_/ \\___|_|\\___\\___/|_| |_| |_|\\___|     \\__\\___/     |_| \\_\\___/ \\__, |\\__,_|\\___|");
+    mvprintw(6,20,"                                                                        |___/            ");
     attron(COLOR_PAIR(1));
     const char *menu[] = {"New User", "Login","Exit"};
     int choice = 0;
     while (1)
     {
-        mvprintw(1,1,"Welcome to Rouge! ;)");
+        
         for (int i = 0; i < 3; ++i)
         {
             if (i == choice)
@@ -811,10 +884,102 @@ void main_menu() {
         break;
     case 2:
         endwin();
+        Mix_CloseAudio();
+        SDL_Quit();
         break;
     }
     echo();
     attroff(COLOR_PAIR(1));
     clear();
     refresh();
+}
+
+int initSDL() {
+    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+        return 0;
+    }
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        return 0;
+    }
+    return 1;
+}
+
+Mix_Music* playmusic(const char* music_file) {
+    Mix_Music* start_music = Mix_LoadMUS(music_file);
+    if (start_music == NULL) {
+        return NULL;
+    }
+    Mix_PlayMusic(start_music, -1);
+    return start_music;
+}
+
+int music(char name[30]) {
+    initscr();
+    clear();
+    curs_set(FALSE);
+    start_color();
+    keypad(stdscr, TRUE);
+    noecho();
+    init_pair(1,COLOR_WHITE,COLOR_BLUE);
+    attron(COLOR_PAIR(1));
+    if (!initSDL()) return -1;
+    const char* musics[] = {"1.mp3","2.mp3","3.mp3"};
+    const char *menu[] = {"   Hedwig's Theme      -         John Williams         ",
+                          "     Sur le fil        -          Yann Tiersen         ", 
+                          " Mission Impossible    -   Adam Clayton & Larry Mullen ",
+                          "                  Turn off the music                   "};
+    int choice = 0;
+    while (1)
+    {
+        for (int i = 0; i < 4; ++i)
+        {
+            if (i == choice)
+                attron(A_REVERSE);
+            mvprintw(4 + i, 3, "%s", menu[i]);
+            if (i == choice)
+                attroff(A_REVERSE);
+        }
+        int ch = getch();
+        if (ch == KEY_UP)
+            choice = (choice == 0) ? 3 : choice - 1;
+        else if (ch == KEY_DOWN)
+            choice = (choice == 3) ? 0 : choice + 1;
+        else if (ch == 10)
+            break;
+    }
+    int music_num = 3;
+    int current_music;
+    switch (choice)
+    {
+    case 0:
+        current_music = 0;
+        break;
+    case 1:
+        current_music = 1;
+        break;
+    case 2:
+        current_music = 2;
+        break;
+    case 3:
+        Mix_HaltMusic();
+        Mix_CloseAudio();
+        SDL_Quit();
+        setting(name);
+        return 0;
+        break;
+    }
+    Mix_Music* start_music = playmusic(musics[current_music]);
+    
+    echo();
+    attroff(COLOR_PAIR(1));
+    clear();
+    refresh();
+    setting(name);
+}
+
+int main() {
+    srand(time(0));
+    //initalize_player();
+    main_menu();
+    return 0;
 }
