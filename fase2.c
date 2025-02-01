@@ -1,4 +1,9 @@
 //403105771
+//Rouge Game Project
+//last update: 2/2/2025
+
+
+#define _GNU_SOURCE
 #include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +16,7 @@
 #include <SDL2/SDL_mixer.h>
 #include <unistd.h>
 
+
 struct position {
     int y;
     int x;
@@ -20,14 +26,6 @@ struct position2 {
     int x;
     char s;
 };
-struct position location;
-struct position2 last_cell;
-struct position2 last_last_cell;
-struct position2 enemy_location;
-
-int tabaghe = 1; char string[20] = "";
-int count_hungry = 0, count_hpotion = 0,count_spotion = 0,count_dpotion = 0, food_change = 0, sfood_change = 0, dfood_change = 0;
-int max_health = 100;
 struct enemy {
     int health;
     int woke;
@@ -61,9 +59,32 @@ struct player_health_money_wapon {
     int damage_food;
     int speed_food;
     int energy;
+
+    int floor;
+    int x; int y;
+    int can_load;
 };
+struct room {
+    int xs;
+    int ys;
+    int xf;
+    int yf;
+    int visited;
+};
+
+
+struct room room1; struct room room2; struct room room3; struct room room4; struct room room5; struct room room6;
+struct position location; struct position2 last_cell; struct position2 last_last_cell; struct position2 enemy_location;
 struct player_health_money_wapon player;
 struct enemy deamon; struct enemy snake; struct enemy undeed; struct enemy fire; struct enemy giant; struct enemy boss;
+
+
+int tabaghe = 1; int count_hungry = 0, count_hpotion = 0,count_spotion = 0,count_dpotion = 0, food_change = 0, sfood_change = 0, dfood_change = 0;
+chtype last_map[27][110]; char last_map_simple[27][110]; chtype played_map[27][110];
+int pos[30][10] = {{0}}; int window[4][2] = {{0}};
+char string[20] = ""; int max_health = 100;
+const char* musics[] = {"1.mp3","2.mp3","3.mp3"}; int current_music;
+
 
 int save_game(int won);
 void clean_right_side();
@@ -76,7 +97,7 @@ void enemy_hit_us(int y, int x);
 void initialize_enemy();
 int wake_enemy(int x, int y);
 void check_game_over();
-void enemy_hit_long_range(int x, int y, int direction, int range, int hit);
+int enemy_hit_long_range(int x, int y, int direction, int range, int hit);
 char enemy_that_were_close_hit(int x, int y);
 int compare(const void *a, const void *b);
 void scoreboard2(char name[30]);
@@ -90,11 +111,18 @@ void login_menu();
 void new_user();
 int correct_password(char str[30]);
 int correct_email(char str[30]);
-void main_menu();
+int main_menu();
 int initSDL();
 int music(char name[30]);
 Mix_Music* playmusic(const char* musicFile);
 void pass_gen();
+void clean_map();
+void save_map_before_quit();
+void save_map();
+void print_map_loading();
+void print_hallway();
+void print_rooms();
+void print_room1(); void print_room2(); void print_room3(); void print_room4(); void print_room5(); void print_room6();
 
 
 
@@ -433,7 +461,13 @@ void game_menu_user(char name[30]) {
         make_random_map();
         break;
     case 1:
-        main_menu();
+        if (player.can_load == 1) {
+            print_map_loading();
+            move_and_message();
+        }
+        else {
+            game_menu_user(player.username);
+        }
         break;
     case 2:
         setting(name);
@@ -718,8 +752,7 @@ void login_menu() {
         attroff(COLOR_PAIR(1));
         clear();
         printw("you are logged in successfully!\n");
-        printw("press any key to continue...\n");
-        getch();
+        napms(5000);
         game_menu_user(username);
         refresh();
     case 1:
@@ -824,8 +857,7 @@ void new_user() {
     clear();
     refresh();
     printw("a new user was made!\n");
-    printw("press any key to continue...\n");
-    getch();
+    napms(5000);
     main_menu();
 }
 
@@ -870,7 +902,7 @@ int correct_email(char str[30]) {
     else return 0;
 }
 
-void main_menu() {
+int main_menu() {
     initscr();
     clear();
     curs_set(FALSE);
@@ -917,9 +949,11 @@ void main_menu() {
         login_menu();
         break;
     case 2:
-        endwin();
         Mix_CloseAudio();
         SDL_Quit();
+        endwin();
+        exit(0);
+        return 0;
         break;
     }
     echo();
@@ -943,7 +977,7 @@ Mix_Music* playmusic(const char* music_file) {
     if (start_music == NULL) {
         return NULL;
     }
-    Mix_PlayMusic(start_music, -1);
+    Mix_PlayMusic(start_music, 0);
     return start_music;
 }
 
@@ -957,7 +991,6 @@ int music(char name[30]) {
     init_pair(1,COLOR_WHITE,COLOR_BLUE);
     attron(COLOR_PAIR(1));
     if (!initSDL()) return -1;
-    const char* musics[] = {"1.mp3","2.mp3","3.mp3"};
     const char *menu[] = {"   Hedwig's Theme      -         John Williams         ",
                           "     Sur le fil        -          Yann Tiersen         ", 
                           " Mission Impossible    -   Adam Clayton & Larry Mullen ",
@@ -981,8 +1014,6 @@ int music(char name[30]) {
         else if (ch == 10)
             break;
     }
-    int music_num = 3;
-    int current_music;
     switch (choice)
     {
     case 0:
@@ -1002,7 +1033,7 @@ int music(char name[30]) {
         return 0;
         break;
     }
-    Mix_Music* start_music = playmusic(musics[current_music]);
+    playmusic(musics[current_music]);
     
     echo();
     attroff(COLOR_PAIR(1));
@@ -1202,6 +1233,13 @@ int valid_move(int x, int y) {
         break;
     case '%':
         player.speed_food++;
+        return 1;
+        break;
+    case '=':
+        return 1;
+        break;
+    case '*':
+        player.normal_arrow++;
         return 1;
         break;
     case '!':
@@ -1424,7 +1462,6 @@ void make_random_map() {
     mvprintw(26,80,"            |___/");
     attron(COLOR_PAIR(1));
 
-    int pos[15][2];
     initialize_enemy();
 
     int x,y,tool,arz, door1,door2,door3, m,n;
@@ -1444,6 +1481,7 @@ void make_random_map() {
     int black_gold_room = random_number(1,6);
     int foodx, foody; int enemyx, enemyy;
     int a2 = random_number(1,5);
+    int panjare = 0;
 
     for (int k = 0; k < 3; k++)
     {
@@ -1649,48 +1687,71 @@ void make_random_map() {
 
             if (k == 0 && l == 0) {
                 door1 = random_number(1,arz); door2 = random_number(1,tool);
-                pos[1][0] = (y + door1); pos[1][1] = (x + tool+1);
-                pos[2][0] = (y + arz + 1); pos[2][1] = (x + door2);
+                panjare = random_number(1,tool);
+                if (panjare == door2) panjare--;
+                
+                pos[15][0] = (y + door1); pos[15][1] = (x + tool+1);
+                pos[16][0] = (y + arz + 1); pos[16][1] = (x + door2);
+                window[1][0] = (y + arz + 1); window[1][1] = (x + panjare);
+                room1.xs = x; room1.xf = (x+tool+1); room1.ys = y; room1.yf = (y+arz+1); room1.visited = 0;
             }
             if (k == 0 && l == 1) {
                 door1 = random_number(1,arz); door2 = random_number(1,tool);
                 pos[3][0] = (y + door1); pos[3][1] = (x + tool+1);
                 pos[4][0] = (y); pos[4][1] = (x + door2);
+                room2.xs = x; room2.xf = (x+tool+1); room2.ys = y; room2.yf = (y+arz+1); room2.visited = 0;
             }
             if (k == 1 && l == 0) {
                 door1 = random_number(1,arz); door2 = random_number(1,arz); door3 = random_number(1,tool);
+                panjare = random_number(1,arz);
+                if (panjare == door2) panjare--;
                 pos[5][0] = (y + door1); pos[5][1] = (x);
                 pos[6][0] = (y + door2); pos[6][1] = (x + tool + 1);
                 pos[13][0] = (y + arz + 1); pos[13][1] = (x + door3);
+                window[3][0] = (y + panjare); window[3][1] = (x + tool + 1);
+                room3.xs = x; room3.xf = (x+tool+1); room3.ys = y; room3.yf = (y+arz+1); room3.visited = 0;
             }
             if (k == 1 && l == 1) {
                 door1 = random_number(1,arz); door2 = random_number(1,arz); door3 = random_number(1,tool);
+                panjare = random_number(1,tool);
+                if (panjare == door3) panjare--;
                 pos[7][0] = (y + door1); pos[7][1] = (x);
                 pos[8][0] = (y + door2); pos[8][1] = (x + tool + 1);
                 pos[14][0] = (y); pos[14][1] = (x + door3);
+                window[2][0] = (y); window[2][1] = (x + panjare);
+                room4.xs = x; room4.xf = (x+tool+1); room4.ys = y; room4.yf = (y+arz+1); room4.visited = 0;
             }
             if (k == 2 && l == 0) {
                 door1 = random_number(1,arz); door2 = random_number(1,tool);
                 pos[9][0] = (y + door1); pos[9][1] = (x);
                 pos[10][0] = (y + arz + 1); pos[10][1] = (x + door2);
+                room5.xs = x; room5.xf = (x+tool+1); room5.ys = y; room5.yf = (y+arz+1); room5.visited = 0;
             }
             if (k == 2 && l == 1) {
                 door1 = random_number(1,arz); door2 = random_number(1,tool);
+                panjare = random_number(1,tool);
+                if (panjare == door2) panjare--;
                 pos[11][0] = (y + door1); pos[11][1] = (x);
                 pos[12][0] = (y); pos[12][1] = (x + door2);
+                window[4][0] = (y); window[4][1] = (x + panjare);
+                room6.xs = x; room6.xf = (x+tool+1); room6.ys = y; room6.yf = (y+arz+1); room6.visited = 0;
             }
             attron(COLOR_PAIR(1));
             current_room++;
         }
     }
     location.x = x+1; location.y = y+1;
-    for (int i = 1; i <= 14; i++)
+    for (int i = 3; i <= 16; i++)
     {
         mvaddch(pos[i][0],pos[i][1],'+');
     }
+    for (int i = 1; i <= 4; i++)
+    {
+        mvaddch(window[i][0],window[i][1],'=');
+    }
     
-    if (pos[1][0] > pos[5][0]) hallway_ru(pos[1][0],pos[1][1],pos[5][0],pos[5][1]);
-    else hallway_rd(pos[1][0],pos[1][1],pos[5][0],pos[5][1]);
+    if (pos[15][0] > pos[5][0]) hallway_ru(pos[15][0],pos[15][1],pos[5][0],pos[5][1]);
+    else hallway_rd(pos[15][0],pos[15][1],pos[5][0],pos[5][1]);
 
     if (pos[6][0] > pos[9][0]) hallway_ru(pos[6][0],pos[6][1],pos[9][0],pos[9][1]);
     else hallway_rd(pos[6][0],pos[6][1],pos[9][0],pos[9][1]);
@@ -1701,8 +1762,8 @@ void make_random_map() {
     if (pos[8][0] > pos[11][0]) hallway_ru(pos[8][0],pos[8][1],pos[11][0],pos[11][1]);
     else hallway_rd(pos[8][0],pos[8][1],pos[11][0],pos[11][1]);
 
-    if (pos[2][1] > pos[4][1]) hallway_ur(pos[4][0],pos[4][1],pos[2][0],pos[2][1]);
-    else hallway_ul(pos[4][0],pos[4][1],pos[2][0],pos[2][1]);
+    if (pos[16][1] > pos[4][1]) hallway_ur(pos[4][0],pos[4][1],pos[16][0],pos[16][1]);
+    else hallway_ul(pos[4][0],pos[4][1],pos[16][0],pos[16][1]);
 
     if (pos[10][1] > pos[12][1]) hallway_ur(pos[12][0],pos[12][1],pos[10][0],pos[10][1]);
     else hallway_ul(pos[12][0],pos[12][1],pos[10][0],pos[10][1]);
@@ -1710,8 +1771,9 @@ void make_random_map() {
     if (pos[13][1] > pos[14][1]) hallway_ur(pos[14][0],pos[14][1],pos[13][0],pos[13][1]);
     else hallway_ul(pos[14][0],pos[14][1],pos[13][0],pos[13][1]);
 
-    attroff(COLOR_PAIR(1));
 
+    attroff(COLOR_PAIR(1));
+    save_map();
     move_and_message();
 }
 
@@ -1728,6 +1790,8 @@ void move_and_message() {
     init_pair(6,COLOR_GREEN,COLOR_BLACK);
     init_pair(7,COLOR_WHITE,COLOR_BLACK);
 
+    print_room6();
+
     int ch, ch2;
     int count_d = 0, count_f = 0;
     attron(COLOR_PAIR(player.color));
@@ -1742,8 +1806,17 @@ void move_and_message() {
         int direction;
 
         if (ch == 'q') {
-            main_menu();
-            break;
+            if (strcmp(player.username,"guest") == 0)
+            {
+                main_menu();
+            }
+            else {
+                player.can_load = 1;
+                save_map_before_quit();
+                napms(3000);
+                game_menu_user(player.username);
+                endwin();
+            }
         }
 
         else if (ch == ' ') {
@@ -2216,6 +2289,48 @@ void move_and_message() {
             }
         }
 
+        else if (ch == 'r') {
+            for (int i = 0; i < 28; i++) {
+                for (int j = 0; j < 110; j++) {
+                    played_map[i][j] = mvinch(i,j);
+                }
+            }
+            player.x = location.x; player.y = location.y;
+            for (int i = 0; i < 28; i++) {
+                for (int j = 0; j < 110; j++) {
+                    if (last_map_simple[i][j] == '#')
+                    {
+                        mvaddch(i,j,last_map[i][j]);
+                    }
+                }
+            }
+            if (room1.visited == 0)
+            {
+                print_room1();
+                room1.visited = 1;
+            }
+            if (room2.visited == 0)
+            {
+                print_room2();
+                room2.visited = 1;
+            }
+            if (room3.visited == 0)
+            {
+                print_room3();
+                room3.visited = 1;
+            }
+            if (room4.visited == 0)
+            {
+                print_room4();
+                room4.visited = 1;
+            }
+            if (room5.visited == 0)
+            {
+                print_room5();
+                room5.visited = 1;
+            }
+        }
+
         else if (ch == 'g') {
             ch2 = getch();
             move_character(ch2);
@@ -2304,6 +2419,13 @@ void move_and_message() {
                 attron(COLOR_PAIR(1));
                 mvprintw(0,1,"You ignored the 'Power Food'!                                        ");
                 player.food--;
+                break;
+            case '+':
+                print_hallway();
+                print_rooms();
+                break;
+            case '#':
+                print_hallway();
                 break;
             }
             last_cell.y = location.y; last_cell.x = location.x;
@@ -2402,6 +2524,13 @@ void move_and_message() {
                     mvprintw(0,1,"You add 1 'Power Food' to your backpack!                              ");
                     dfood_change = 0;
                     last_cell.s = '.';
+                    break;
+                case '+':
+                    print_hallway();
+                    print_rooms();
+                    break;
+                case '#':
+                    print_hallway();
                     break;
                 case '!':
                     attron(COLOR_PAIR(2));
@@ -2650,6 +2779,7 @@ void move_and_message() {
                                 attron(COLOR_PAIR(2));
                                 mvprintw(16,80," Dagger                       ");
                                 strcpy(player.current_weapon,"Dagger");
+                                player.dagger--;
                                 attron(COLOR_PAIR(7));
                                 mvprintw(11,80," Dagger(K):   12   5    %d   ",player.dagger);
                                 valid = 0;
@@ -2666,6 +2796,7 @@ void move_and_message() {
                                 attron(COLOR_PAIR(2));
                                 mvprintw(16,80," Arrow                        ");
                                 strcpy(player.current_weapon,"Arrow");
+                                player.normal_arrow--;
                                 attron(COLOR_PAIR(7));
                                 mvprintw(13,80," Arrow(A):    5    5    %d   ",player.normal_arrow);
                                 valid = 0;
@@ -2681,6 +2812,7 @@ void move_and_message() {
                                 attron(COLOR_PAIR(2));
                                 mvprintw(16,80," Wand                         ");
                                 strcpy(player.current_weapon,"Wand");
+                                player.magic_wand--;
                                 attron(COLOR_PAIR(7));
                                 mvprintw(12,80," Wand(W):     15   10   %d   ",player.magic_wand);
                                 valid = 0;
@@ -2706,8 +2838,8 @@ void move_and_message() {
             attroff(COLOR_PAIR(1));
             attron(COLOR_PAIR(player.color));
 
-            last_cell.s = mvinch(location.y,location.x);
-            last_last_cell.s = mvinch(enemy_location.y,enemy_location.x);
+            last_cell.s = mvinch(location.y,location.x) & A_CHARTEXT;
+            last_last_cell.s = mvinch(enemy_location.y,enemy_location.x) & A_CHARTEXT;
 
             
 
@@ -2804,6 +2936,57 @@ void move_and_message() {
                 mvprintw(0,1,"You add 1 'Speed Food' to your backpack!                              ");
                 sfood_change = 0;
                 last_cell.s = '.';
+                break;
+            case '*':
+                attron(COLOR_PAIR(1));
+                mvprintw(0,1,"You took a 'wasted Arrow'!                                            ");
+                last_cell.s = '.';
+                break;
+            case '+':
+                print_hallway();
+                print_rooms();
+                chtype wall1 = mvinch(location.y+1,location.x), wall2 = mvinch(location.y,location.x+1), wall3 = mvinch(location.y-1,location.x), wall4 = mvinch(location.y,location.x-1);
+                if ( (PAIR_NUMBER(wall1 & A_COLOR) == 3 && (wall1 & A_CHARTEXT == '_' || wall1 & A_CHARTEXT == '|')) || (PAIR_NUMBER(wall2 & A_COLOR) == 3 && (wall2 & A_CHARTEXT == '_' || wall2 & A_CHARTEXT == '|')) || (PAIR_NUMBER(wall3 & A_COLOR) == 3 && (wall3 & A_CHARTEXT == '_' || wall3 & A_CHARTEXT == '|')) || (PAIR_NUMBER(wall4 & A_COLOR) == 3 && (wall4 & A_CHARTEXT == '_' || wall4 & A_CHARTEXT == '|')))
+                {
+                    if (current_music != 0) {
+                        playmusic(musics[0]);
+                        current_music = 0;
+                    }
+                }
+                else if ( (PAIR_NUMBER(wall1 & A_COLOR) == 4 && (wall1 & A_CHARTEXT == '_' || wall1 & A_CHARTEXT == '|')) || (PAIR_NUMBER(wall2 & A_COLOR) == 4 && (wall2 & A_CHARTEXT == '_' || wall2 & A_CHARTEXT == '|')) || (PAIR_NUMBER(wall3 & A_COLOR) == 4 && (wall3 & A_CHARTEXT == '_' || wall3 & A_CHARTEXT == '|')) || (PAIR_NUMBER(wall4 & A_COLOR) == 4 && (wall4 & A_CHARTEXT == '_' || wall4 & A_CHARTEXT == '|')))
+                {
+                    if (current_music != 2) {
+                        playmusic(musics[2]);
+                        current_music = 2;
+                    }
+                }
+                else {
+                    if (current_music != 1) {
+                        playmusic(musics[1]);
+                        current_music = 1;
+                    }
+                }
+                break;
+            case '=':
+                if (location.y == window[1][0] && location.x == window[1][1]) {
+                    print_room2();
+                    room2.visited = 1;
+                }
+                if (location.y == window[2][0] && location.x == window[2][1]) {
+                    print_room3();
+                    room3.visited = 1;
+                }
+                if (location.y == window[3][0] && location.x == window[3][1]) {
+                    print_room5();
+                    room5.visited = 1;
+                }
+                if (location.y == window[4][0] && location.x == window[4][1]) {
+                    print_room5();
+                    room5.visited = 1;
+                }
+                break;
+            case '#':
+                print_hallway();
                 break;
             case '!':
                 attron(COLOR_PAIR(2));
@@ -3011,7 +3194,7 @@ void move_and_message() {
     refresh();
 }
 
-void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
+int enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
     switch (direction)
     {
     case 1:
@@ -3030,6 +3213,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     deamon.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'F') {
@@ -3043,6 +3227,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     fire.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'G')
@@ -3057,6 +3242,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     giant.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'U')
@@ -3071,6 +3257,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     undeed.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'M')
@@ -3101,6 +3288,12 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                 }
                 break;
             }
+            if (ch == 'O' || ch == '_' || ch == '|' || ch == '=' || ch == '+' || ch == '#')
+            {
+                mvaddch(y-i+1,x,'*');
+                return 0;
+                break;
+            }
         }
         break;
     case 2:
@@ -3119,6 +3312,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     deamon.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'F') {
@@ -3132,6 +3326,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     fire.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'G')
@@ -3146,6 +3341,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     giant.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'U')
@@ -3160,6 +3356,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     undeed.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'M')
@@ -3174,6 +3371,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     snake.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'B')
@@ -3188,6 +3386,13 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     boss.woke = 0; boss.live = 0;
                 }
+                return 1;
+                break;
+            }
+            if (ch == 'O' || ch == '_' || ch == '|' || ch == '=' || ch == '+' || ch == '#')
+            {
+                mvaddch(y,x+i-1,'*');
+                return 0;
                 break;
             }
         }
@@ -3208,6 +3413,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     deamon.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'F') {
@@ -3221,6 +3427,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     fire.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'G')
@@ -3235,6 +3442,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     giant.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'U')
@@ -3249,6 +3457,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     undeed.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'M')
@@ -3263,6 +3472,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     snake.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'B')
@@ -3277,6 +3487,13 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     boss.woke = 0; boss.live = 0;
                 }
+                return 1;
+                break;
+            }
+            if (ch == 'O' || ch == '_' || ch == '|' || ch == '=' || ch == '+' || ch == '#')
+            {
+                mvaddch(y+i-1,x,'*');
+                return 0;
                 break;
             }
         }
@@ -3297,6 +3514,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     deamon.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'F') {
@@ -3310,6 +3528,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     fire.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'G')
@@ -3324,6 +3543,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     giant.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'U')
@@ -3338,6 +3558,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     undeed.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'M')
@@ -3352,6 +3573,7 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     snake.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'B')
@@ -3366,9 +3588,35 @@ void enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     boss.woke = 0; boss.live = 0;
                 }
+                return 1;
+                break;
+            }
+            if (ch == 'O' || ch == '_' || ch == '|' || ch == '=' || ch == '+' || ch == '#')
+            {
+                mvaddch(y,x-i+1,'*');
+                return 0;
                 break;
             }
         }
+        break;
+    }
+    switch (direction)
+    {
+    case 1:
+        attron(COLOR_PAIR(5));
+        mvaddch(y-range,x,'*');
+        break;
+    case 2:
+        attron(COLOR_PAIR(5));
+        mvaddch(y,x+range,'*');
+        break;
+    case 3:
+        attron(COLOR_PAIR(5));
+        mvaddch(y+range,x,'*');
+        break;
+    case 4:
+        attron(COLOR_PAIR(5));
+        mvaddch(y,x-range,'*');
         break;
     }
     
@@ -3474,6 +3722,7 @@ void initialize_player() {
     player.magic_wand = 0; player.normal_arrow = 0;
     player.sword = 0; player.potion_speed = 0; player.potion_health = 0; player.food = 0;
     player.ps_on = 0; player.pd_on = 0; player.ph_on = 0;
+    player.x = 0; player.y = 0; player.floor = 1; player.can_load = 0;
     strcpy(player.current_weapon,"Mace");
 }
 
@@ -3592,10 +3841,160 @@ int save_game(int won) {
     fclose(fg);
 }
 
+void clean_map() {
+    for (int i = 3; i <= 26; i++)
+    {
+        for (int j = 1; j <= 78; j++)
+        {
+            mvaddch(i,j,' ');
+        }
+    }
+}
+
+void save_map_before_quit() {
+    for (int i = 0; i < 28; i++) {
+        for (int j = 0; j < 110; j++)
+        {
+            last_map[i][j] = mvinch(i,j);
+        }
+    }
+    player.floor = tabaghe;
+    player.x = location.x; player.y = location.y;
+}
+
+void save_map() {
+    for (int i = 0; i < 28; i++) {
+        for (int j = 0; j < 110; j++)
+        {
+            last_map[i][j] = mvinch(i,j);
+            last_map_simple[i][j] = (mvinch(i,j) & A_CHARTEXT);
+        }
+    }
+    clean_map();
+}
+
+void print_map_loading() {
+    location.x = player.x; location.y = player.y;
+    tabaghe = player.floor;
+    for (int i = 0; i < 28; i++) {
+        for (int j = 0; j < 110; j++)
+        {
+            mvaddch(i,j,last_map[i][j]);
+        }
+    }
+}
+
+void print_room1() {
+    for (int i = room1.ys; i <= room1.yf; i++) {
+        for (int j = room1.xs; j <= room1.xf; j++) {
+            mvaddch(i,j,last_map[i][j]);
+        }
+    }
+    room1.visited = 1;
+}
+
+void print_room2() {
+    for (int i = room2.ys; i <= room2.yf; i++) {
+        for (int j = room2.xs; j <= room2.xf; j++) {
+            mvaddch(i,j,last_map[i][j]);
+        }
+    }
+    room2.visited = 1;
+}
+
+void print_room3() {
+    for (int i = room3.ys; i <= room3.yf; i++) {
+        for (int j = room3.xs; j <= room3.xf; j++) {
+            mvaddch(i,j,last_map[i][j]);
+        }
+    }
+    room3.visited = 1;
+}
+
+void print_room4() {
+    for (int i = room4.ys; i <= room4.yf; i++) {
+        for (int j = room4.xs; j <= room4.xf; j++) {
+            mvaddch(i,j,last_map[i][j]);
+        }
+    }
+    room4.visited = 1;
+}
+
+void print_room5() {
+    for (int i = room5.ys; i <= room5.yf; i++) {
+        for (int j = room5.xs; j <= room5.xf; j++) {
+            mvaddch(i,j,last_map[i][j]);
+        }
+    }
+    room5.visited = 1;
+}
+
+void print_room6() {
+    for (int i = room6.ys; i <= room6.yf; i++) {
+        for (int j = room6.xs; j <= room6.xf; j++) {
+            mvaddch(i,j,last_map[i][j]);
+        }
+    }
+    room6.visited = 1;
+}
+
+void print_hallway() {
+    for (int i = -2; i <= 2; i++) {
+        for (int j = -2; j <= 2; j++) {
+            if (last_map_simple[location.y + i][location.x + j] == '#' || last_map_simple[location.y + i][location.x + j] == '+') {
+                mvaddch(location.y + i, location.x + j, last_map[location.y + i][location.x + j]);
+            }
+        }
+    }
+}
+
+void print_rooms() {
+    int x = location.x; int y = location.y;
+        if (room1.visited == 0) {
+            if ( ( (y == pos[15][0]) && (x == pos[15][1]) ) || ( (y == pos[16][0]) && (x == pos[16][1]) ) ) {
+                print_room1();
+            }
+        }
+        if (room2.visited == 0) {
+            if ( ( (y == pos[3][0]) && (x == pos[3][1]) ) || ( (y == pos[4][0]) && (x == pos[4][1]) ) ) {
+                print_room2();
+            }
+        }
+        if (room3.visited == 0) {
+            if ( ( (y == pos[5][0]) && (x == pos[5][1]) ) || ( (y == pos[6][0]) && (x == pos[6][1]) ) || ( (y == pos[13][0]) && (x == pos[13][1]) ) ) {
+                print_room3();
+            }
+        }
+        if (room4.visited == 0) {
+            if ( ( (y == pos[7][0]) && (x == pos[7][1]) ) || ( (y == pos[8][0]) && (x == pos[8][1]) ) || ( (y == pos[14][0]) && (x == pos[14][1]) ) ) {
+                print_room4();
+            }
+        }
+        if (room5.visited == 0) {
+            if ( ( (y == pos[9][0]) && (x == pos[9][1]) ) || ( (y == pos[10][0]) && (x == pos[10][1]) ) ) {
+                print_room5();
+            }
+        }
+}
+
+
+
 int main() {
     srand(time(0));
+
+
+
     initialize_player();
+
+
+
     main_menu();
+
+
+
     endwin();
+
+
+
     return 0;
 }
