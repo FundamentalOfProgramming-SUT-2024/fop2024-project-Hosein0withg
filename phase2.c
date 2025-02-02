@@ -83,7 +83,7 @@ int tabaghe = 1; int count_hungry = 0, count_hpotion = 0,count_spotion = 0,count
 chtype last_map[27][110]; char last_map_simple[27][110]; chtype played_map[27][110];
 int pos[30][10] = {{0}}; int window[4][2] = {{0}};
 char string[20] = ""; int max_health = 100;
-const char* musics[] = {"1.mp3","2.mp3","3.mp3"}; int current_music;
+const char* musics[] = {"1.mp3","2.mp3","3.mp3"}; int current_music = 1;
 
 
 int save_game(int won);
@@ -128,11 +128,10 @@ void print_room1(); void print_room2(); void print_room3(); void print_room4(); 
 
 void scoreboard1(char name[30]) {
     setlocale(LC_ALL, "");
-    char top_user[10][30]; int top_point[10], top_gold[10], top_fg[10], top_sg[10]; int p[10], g[10], fg1[10], sg1[10];
+    char top_user[10][30]; int top_point[10], top_gold[10], top_fg[10]; int p[10], g[10], fg1[10];
     FILE* user = fopen("username.txt","r");
     FILE* points = fopen("points.txt","r");
     FILE* gold = fopen("gold.txt","r");
-    FILE* sg = fopen("started_game_number.txt","r");
     FILE* fg = fopen("finished_game_number.txt","r");
     char str[30]; int p1[100], p2[100]; int x = 0; char u[50][30];
     while (fscanf(points, "%d", &p1[x]) != EOF) {
@@ -141,8 +140,6 @@ void scoreboard1(char name[30]) {
     }
     int r = 0;
     while (fscanf(gold, "%d", &g[r]) != EOF) r++;
-    r = 0;
-    while (fscanf(sg, "%d", &sg1[r]) != EOF) r++;
     r = 0;
     while (fscanf(fg, "%d", &fg1[r]) != EOF) r++;
     int n = x;
@@ -165,12 +162,11 @@ void scoreboard1(char name[30]) {
                 top_point[i] = p2[x];
                 top_gold[i] = g[j];
                 top_fg[i] = fg1[j];
-                top_sg[i] = sg1[j];
                 strcpy(top_user[i],u[j]);
             }
         }
     }
-    fclose(user); fclose(gold); fclose(sg); fclose(fg); fclose(points);
+    fclose(user); fclose(gold); fclose(fg); fclose(points);
 
     //-------------------------------------------------------------------------------------
 
@@ -187,59 +183,59 @@ void scoreboard1(char name[30]) {
     wchar_t gold_medal[] = L"🏅";
     wchar_t silver_medal[] = L"🥈";
     wchar_t bronze_medal[] = L"🥉";
-    printw("|rank| username                               |point|gold|fgame|exp|\n");
+    printw("|rank| username                               |point|gold|exp|\n");
 
     if (strcmp(name,top_user[0]) == 0) attron(A_BOLD | A_UNDERLINE);
     attron(COLOR_PAIR(2) | A_ITALIC);
-    printw("|1   |                                        |     |    |     |   |\n");
+    printw("|1   |                                        |     |    |   |\n");
     mvaddwstr(1, 3, gold_medal);
     int q = 0;
     mvprintw((q+1),7,"%-25s",top_user[q]); mvprintw((q+1),31,"%-10s","(The Legend)");
     mvprintw((q+1),47,"%-5d",top_point[q]); mvprintw((q+1),53,"%-4d",top_gold[q]);
-    mvprintw((q+1),58,"%-5d",top_fg[q]); mvprintw((q+1),64,"%-3d",top_sg[q]);
+    mvprintw((q+1),58,"%-3d",top_fg[q]);
     attroff(COLOR_PAIR(2) | A_ITALIC);
     if (strcmp(name,top_user[0]) == 0) attroff(A_BOLD | A_UNDERLINE);
 
     if (strcmp(name,top_user[1]) == 0) attron(A_BOLD | A_UNDERLINE);
     attron(COLOR_PAIR(3) | A_ITALIC);
     move(2,0);
-    printw("|2   |                                        |     |    |     |   |\n");
+    printw("|2   |                                        |     |    |   |\n");
     mvaddwstr(2, 3, silver_medal);
     q++;
     mvprintw((q+1),7,"%-25s",top_user[q]); mvprintw((q+1),31,"%-10s","(The Goat)");
     mvprintw((q+1),47,"%-5d",top_point[q]); mvprintw((q+1),53,"%-4d",top_gold[q]);
-    mvprintw((q+1),58,"%-5d",top_fg[q]); mvprintw((q+1),64,"%-3d",top_sg[q]);
+    mvprintw((q+1),58,"%-3d",top_fg[q]);
     attroff(COLOR_PAIR(2) | A_ITALIC);
     if (strcmp(name,top_user[1]) == 0) attroff(A_BOLD | A_UNDERLINE);
 
     if (strcmp(name,top_user[2]) == 0) attron(A_BOLD | A_UNDERLINE);
     attron(COLOR_PAIR(4) | A_ITALIC);
     move(3,0);
-    printw("|3   |                                        |     |    |     |   |\n");
+    printw("|3   |                                        |     |    |   |\n");
     mvaddwstr(3, 3, bronze_medal);
     q++;
     mvprintw((q+1),7,"%-25s",top_user[q]); mvprintw((q+1),31,"%-10s","(The Champion)");
     mvprintw((q+1),47,"%-5d",top_point[q]); mvprintw((q+1),53,"%-4d",top_gold[q]);
-    mvprintw((q+1),58,"%-5d",top_fg[q]); mvprintw((q+1),64,"%-3d",top_sg[q]);
+    mvprintw((q+1),58,"%-3d",top_fg[q]);
     attroff(COLOR_PAIR(4) | A_ITALIC);
     if (strcmp(name,top_user[2]) == 0) attroff(A_BOLD | A_UNDERLINE);
 
     if (strcmp(name,top_user[3]) == 0) attron(A_BOLD | A_UNDERLINE);
     move(4,0);
-    printw("|4   |                                        |     |    |     |   |\n");
+    printw("|4   |                                        |     |    |   |\n");
     q++;
     mvprintw((q+1),7,"%-25s",top_user[q]);
     mvprintw((q+1),47,"%-5d",top_point[q]); mvprintw((q+1),53,"%-4d",top_gold[q]);
-    mvprintw((q+1),58,"%-5d",top_fg[q]); mvprintw((q+1),64,"%-3d",top_sg[q]);
+    mvprintw((q+1),58,"%-3d",top_fg[q]);
     if (strcmp(name,top_user[3]) == 0) attroff(A_BOLD | A_UNDERLINE);
 
     if (strcmp(name,top_user[4]) == 0) attron(A_BOLD | A_UNDERLINE);
     move(5,0);
-    printw("|5   |                                        |     |    |     |   |\n");
+    printw("|5   |                                        |     |    |   |\n");
     q++;
     mvprintw((q+1),7,"%-25s",top_user[q]);
     mvprintw((q+1),47,"%-5d",top_point[q]); mvprintw((q+1),53,"%-4d",top_gold[q]);
-    mvprintw((q+1),58,"%-5d",top_fg[q]); mvprintw((q+1),64,"%-3d",top_sg[q]);
+    mvprintw((q+1),58,"%-3d",top_fg[q]);
     if (strcmp(name,top_user[4]) == 0) attroff(A_BOLD | A_UNDERLINE);
 
     attron(COLOR_PAIR(4));
@@ -280,11 +276,10 @@ void scoreboard1(char name[30]) {
 }
 
 void scoreboard2(char name[30]) {
-    char top_user[10][30]; int top_point[10], top_gold[10], top_fg[10], top_sg[10]; int p[10], g[10], fg1[10], sg1[10];
+    char top_user[10][30]; int top_point[10], top_gold[10], top_fg[10]; int p[10], g[10], fg1[10];
     FILE* user = fopen("username.txt","r");
     FILE* points = fopen("points.txt","r");
     FILE* gold = fopen("gold.txt","r");
-    FILE* sg = fopen("started_game_number.txt","r");
     FILE* fg = fopen("finished_game_number.txt","r");
     char str[30]; int p1[100], p2[100]; int x = 0; char u[50][30];
     while (fscanf(points, "%d", &p1[x]) != EOF) {
@@ -293,8 +288,6 @@ void scoreboard2(char name[30]) {
     }
     int r = 0;
     while (fscanf(gold, "%d", &g[r]) != EOF) r++;
-    r = 0;
-    while (fscanf(sg, "%d", &sg1[r]) != EOF) r++;
     r = 0;
     while (fscanf(fg, "%d", &fg1[r]) != EOF) r++;
     int n = x;
@@ -317,12 +310,11 @@ void scoreboard2(char name[30]) {
                 top_point[i] = p2[x];
                 top_gold[i] = g[j];
                 top_fg[i] = fg1[j];
-                top_sg[i] = sg1[j];
                 strcpy(top_user[i],u[j]);
             }
         }
     }
-    fclose(user); fclose(gold); fclose(sg); fclose(fg); fclose(points);
+    fclose(user); fclose(gold); fclose(fg); fclose(points);
 
     //-------------------------------------------------------------------------------------
 
@@ -337,51 +329,51 @@ void scoreboard2(char name[30]) {
     init_pair(3,COLOR_WHITE,COLOR_YELLOW);
     init_pair(4,COLOR_WHITE,COLOR_BLUE);
     move(0,0);
-    printw("|rank| username                               |point|gold|fgame|exp|\n");
+    printw("|rank| username                               |point|gold|exp|\n");
 
     if (strcmp(name,top_user[5]) == 0) attron(A_BOLD | A_UNDERLINE);
     move(1,0);
-    printw("|6   |                                        |     |    |     |   |\n");
+    printw("|6   |                                        |     |    |   |\n");
     int q = 5;
     mvprintw((q-4),7,"%-25s",top_user[q]);
     mvprintw((q-4),47,"%-5d",top_point[q]); mvprintw((q-4),53,"%-4d",top_gold[q]);
-    mvprintw((q-4),58,"%-5d",top_fg[q]); mvprintw((q-4),64,"%-3d",top_sg[q]);
+    mvprintw((q-4),58,"%-3d",top_fg[q]);
     if (strcmp(name,top_user[5]) == 0) attroff(A_BOLD | A_UNDERLINE);
 
     if (strcmp(name,top_user[6]) == 0) attron(A_BOLD | A_UNDERLINE);
     move(2,0);
-    printw("|7   |                                        |     |    |     |   |\n");
+    printw("|7   |                                        |     |    |   |\n");
     q++;
     mvprintw((q-4),7,"%-25s",top_user[q]);
     mvprintw((q-4),47,"%-5d",top_point[q]); mvprintw((q-4),53,"%-4d",top_gold[q]);
-    mvprintw((q-4),58,"%-5d",top_fg[q]); mvprintw((q-4),64,"%-3d",top_sg[q]);
+    mvprintw((q-4),58,"%-3d",top_fg[q]);
     if (strcmp(name,top_user[6]) == 0) attroff(A_BOLD | A_UNDERLINE);
 
     if (strcmp(name,top_user[7]) == 0) attron(A_BOLD | A_UNDERLINE);
     move(3,0);
-    printw("|8   |                                        |     |    |     |   |\n");
+    printw("|8   |                                        |     |    |   |\n");
     q++;
     mvprintw((q-4),7,"%-25s",top_user[q]);
     mvprintw((q-4),47,"%-5d",top_point[q]); mvprintw((q-4),53,"%-4d",top_gold[q]);
-    mvprintw((q-4),58,"%-5d",top_fg[q]); mvprintw((q-4),64,"%-3d",top_sg[q]);
+    mvprintw((q-4),58,"%-3d",top_fg[q]);
     if (strcmp(name,top_user[7]) == 0) attroff(A_BOLD | A_UNDERLINE);
 
     if (strcmp(name,top_user[8]) == 0) attron(A_BOLD | A_UNDERLINE);
     move(4,0);
-    printw("|9   |                                        |     |    |     |   |\n");
+    printw("|9   |                                        |     |    |   |\n");
     q++;
     mvprintw((q-4),7,"%-25s",top_user[q]);
     mvprintw((q-4),47,"%-5d",top_point[q]); mvprintw((q-4),53,"%-4d",top_gold[q]);
-    mvprintw((q-4),58,"%-5d",top_fg[q]); mvprintw((q-4),64,"%-3d",top_sg[q]);
+    mvprintw((q-4),58,"%-3d",top_fg[q]);
     if (strcmp(name,top_user[8]) == 0) attroff(A_BOLD | A_UNDERLINE);
 
     if (strcmp(name,top_user[9]) == 0) attron(A_BOLD | A_UNDERLINE);
     move(5,0);
-    printw("|10  |                                        |     |    |     |   |\n");
+    printw("|10  |                                        |     |    |   |\n");
     q++;
     mvprintw((q-4),7,"%-25s",top_user[q]);
     mvprintw((q-4),47,"%-5d",top_point[q]); mvprintw((q-4),53,"%-4d",top_gold[q]);
-    mvprintw((q-4),58,"%-5d",top_fg[q]); mvprintw((q-4),64,"%-3d",top_sg[q]);
+    mvprintw((q-4),58,"%-3d",top_fg[q]);
     if (strcmp(name,top_user[9]) == 0) attroff(A_BOLD | A_UNDERLINE);
 
     attron(COLOR_PAIR(4));
@@ -752,7 +744,8 @@ void login_menu() {
         attroff(COLOR_PAIR(1));
         clear();
         printw("you are logged in successfully!\n");
-        napms(5000);
+        printw("press any key to continue...\n");
+        getch();
         game_menu_user(username);
         refresh();
     case 1:
@@ -857,7 +850,8 @@ void new_user() {
     clear();
     refresh();
     printw("a new user was made!\n");
-    napms(5000);
+    printw("press any key to continue...\n");
+    getch();
     main_menu();
 }
 
@@ -1734,7 +1728,7 @@ void make_random_map() {
                 pos[11][0] = (y + door1); pos[11][1] = (x);
                 pos[12][0] = (y); pos[12][1] = (x + door2);
                 window[4][0] = (y); window[4][1] = (x + panjare);
-                room6.xs = x; room6.xf = (x+tool+1); room6.ys = y; room6.yf = (y+arz+1); room6.visited = 0;
+                room6.xs = x; room6.xf = (x+tool+1); room6.ys = y; room6.yf = (y+arz+1); room6.visited = 1;
             }
             attron(COLOR_PAIR(1));
             current_room++;
@@ -1774,6 +1768,7 @@ void make_random_map() {
 
     attroff(COLOR_PAIR(1));
     save_map();
+    print_room6();
     move_and_message();
 }
 
@@ -1789,8 +1784,6 @@ void move_and_message() {
     init_pair(5,COLOR_BLUE,COLOR_BLACK);
     init_pair(6,COLOR_GREEN,COLOR_BLACK);
     init_pair(7,COLOR_WHITE,COLOR_BLACK);
-
-    print_room6();
 
     int ch, ch2;
     int count_d = 0, count_f = 0;
@@ -2945,15 +2938,24 @@ void move_and_message() {
             case '+':
                 print_hallway();
                 print_rooms();
-                chtype wall1 = mvinch(location.y+1,location.x), wall2 = mvinch(location.y,location.x+1), wall3 = mvinch(location.y-1,location.x), wall4 = mvinch(location.y,location.x-1);
-                if ( (PAIR_NUMBER(wall1 & A_COLOR) == 3 && (wall1 & A_CHARTEXT == '_' || wall1 & A_CHARTEXT == '|')) || (PAIR_NUMBER(wall2 & A_COLOR) == 3 && (wall2 & A_CHARTEXT == '_' || wall2 & A_CHARTEXT == '|')) || (PAIR_NUMBER(wall3 & A_COLOR) == 3 && (wall3 & A_CHARTEXT == '_' || wall3 & A_CHARTEXT == '|')) || (PAIR_NUMBER(wall4 & A_COLOR) == 3 && (wall4 & A_CHARTEXT == '_' || wall4 & A_CHARTEXT == '|')))
+                chtype wall1 = mvinch(location.y+1,location.x);
+                chtype wall2 = mvinch(location.y,location.x+1);
+                chtype wall3 = mvinch(location.y-1,location.x);
+                chtype wall4 = mvinch(location.y,location.x-1);
+                if ( (PAIR_NUMBER(wall1 & A_COLOR) == 3 && ((wall1 & A_CHARTEXT) == '_' || (wall1 & A_CHARTEXT) == '|')) ||
+                (PAIR_NUMBER(wall2 & A_COLOR) == 3 && ((wall2 & A_CHARTEXT) == '_' || (wall2 & A_CHARTEXT) == '|')) ||
+                (PAIR_NUMBER(wall3 & A_COLOR) == 3 && ((wall3 & A_CHARTEXT) == '_' || (wall3 & A_CHARTEXT) == '|')) ||
+                (PAIR_NUMBER(wall4 & A_COLOR) == 3 && ((wall4 & A_CHARTEXT) == '_' || (wall4 & A_CHARTEXT) == '|') ) )
                 {
                     if (current_music != 0) {
                         playmusic(musics[0]);
                         current_music = 0;
                     }
                 }
-                else if ( (PAIR_NUMBER(wall1 & A_COLOR) == 4 && (wall1 & A_CHARTEXT == '_' || wall1 & A_CHARTEXT == '|')) || (PAIR_NUMBER(wall2 & A_COLOR) == 4 && (wall2 & A_CHARTEXT == '_' || wall2 & A_CHARTEXT == '|')) || (PAIR_NUMBER(wall3 & A_COLOR) == 4 && (wall3 & A_CHARTEXT == '_' || wall3 & A_CHARTEXT == '|')) || (PAIR_NUMBER(wall4 & A_COLOR) == 4 && (wall4 & A_CHARTEXT == '_' || wall4 & A_CHARTEXT == '|')))
+                else if ( (PAIR_NUMBER(wall1 & A_COLOR) == 4 && ((wall1 & A_CHARTEXT) == '_' || (wall1 & A_CHARTEXT) == '|')) ||
+                (PAIR_NUMBER(wall2 & A_COLOR) == 4 && ((wall2 & A_CHARTEXT) == '_' || (wall2 & A_CHARTEXT) == '|')) ||
+                (PAIR_NUMBER(wall3 & A_COLOR) == 4 && ((wall3 & A_CHARTEXT) == '_' || (wall3 & A_CHARTEXT) == '|')) ||
+                (PAIR_NUMBER(wall4 & A_COLOR) == 4 && ((wall4 & A_CHARTEXT) == '_' || (wall4 & A_CHARTEXT) == '|')))
                 {
                     if (current_music != 2) {
                         playmusic(musics[2]);
@@ -3272,6 +3274,7 @@ int enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     snake.woke = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'B')
@@ -3286,6 +3289,7 @@ int enemy_hit_long_range(int x, int y, int direction, int range, int hit) {
                     mvaddch(last_last_cell.y,last_last_cell.x,'.');
                     boss.woke = 0; boss.live = 0;
                 }
+                return 1;
                 break;
             }
             if (ch == 'O' || ch == '_' || ch == '|' || ch == '=' || ch == '+' || ch == '#')
@@ -3753,11 +3757,10 @@ int save_game(int won) {
     FILE* user = fopen("username.txt","r");
     FILE* gold = fopen("gold.txt","r");
     FILE* point = fopen("points.txt","r");
-    FILE* sg = fopen("started_game_number.txt","r");
     FILE* fg = fopen("finished_game_number.txt","r");
     char u[30]; int line = 0; int x = 0;
-    char g[6], s[6], f[6], p[6]; int g2=0, s2=0, f2=0, p2=0;
-    int g3[50], s3[50], f3[50], p3[50];
+    char g[10], f[4], p[10]; int g2=0, f2=0, p2=0;
+    int g3[50], f3[50], p3[50];
     if (won == 1)
     {
         player.point += 50;
@@ -3769,7 +3772,7 @@ int save_game(int won) {
         if (strcmp(u,player.username) == 0) break;
         line++;
     }
-    while (fgets(g,4,gold) != NULL)
+    while (fgets(g,8,gold) != NULL)
     {
         g[strlen(g)-1] = '\0';
         sscanf(g,"%d",&g2);
@@ -3786,7 +3789,7 @@ int save_game(int won) {
         fprintf(gold,"%d\n",g3[i]);
     }
     fclose(gold); x = 0;
-    while (fgets(p,4,point) != NULL)
+    while (fgets(p,8,point) != NULL)
     {
         p[strlen(p)-1] = '\0';
         sscanf(p,"%d",&p2);
@@ -3803,25 +3806,6 @@ int save_game(int won) {
         fprintf(point,"%d\n",p3[i]);
     }
     fclose(point); x = 0;
-    while (fgets(s,4,sg) != NULL)
-    {
-        s[strlen(s)-1] = '\0';
-        sscanf(s,"%d",&s2);
-        if (x == line) {
-            s2++;
-        }
-        s3[x] = s2;
-        x++;
-    }
-    fclose(sg);
-    sg = fopen("started_game_number.txt","w");
-    for (int i = 0; i < x; i++)
-    {
-        fprintf(sg,"%d\n",s3[i]);
-    }
-    fclose(sg); x = 0;
-    if (won != 1)
-        return 0;
     while (fgets(f,4,fg) != NULL)
     {
         f[strlen(f)-1] = '\0';
@@ -3855,7 +3839,7 @@ void save_map_before_quit() {
     for (int i = 0; i < 28; i++) {
         for (int j = 0; j < 110; j++)
         {
-            last_map[i][j] = mvinch(i,j);
+            played_map[i][j] = mvinch(i,j);
         }
     }
     player.floor = tabaghe;
@@ -3879,7 +3863,7 @@ void print_map_loading() {
     for (int i = 0; i < 28; i++) {
         for (int j = 0; j < 110; j++)
         {
-            mvaddch(i,j,last_map[i][j]);
+            mvaddch(i,j,played_map[i][j]);
         }
     }
 }
@@ -3892,7 +3876,6 @@ void print_room1() {
     }
     room1.visited = 1;
 }
-
 void print_room2() {
     for (int i = room2.ys; i <= room2.yf; i++) {
         for (int j = room2.xs; j <= room2.xf; j++) {
@@ -3901,7 +3884,6 @@ void print_room2() {
     }
     room2.visited = 1;
 }
-
 void print_room3() {
     for (int i = room3.ys; i <= room3.yf; i++) {
         for (int j = room3.xs; j <= room3.xf; j++) {
@@ -3910,7 +3892,6 @@ void print_room3() {
     }
     room3.visited = 1;
 }
-
 void print_room4() {
     for (int i = room4.ys; i <= room4.yf; i++) {
         for (int j = room4.xs; j <= room4.xf; j++) {
@@ -3919,7 +3900,6 @@ void print_room4() {
     }
     room4.visited = 1;
 }
-
 void print_room5() {
     for (int i = room5.ys; i <= room5.yf; i++) {
         for (int j = room5.xs; j <= room5.xf; j++) {
@@ -3928,7 +3908,6 @@ void print_room5() {
     }
     room5.visited = 1;
 }
-
 void print_room6() {
     for (int i = room6.ys; i <= room6.yf; i++) {
         for (int j = room6.xs; j <= room6.xf; j++) {
@@ -3981,20 +3960,8 @@ void print_rooms() {
 
 int main() {
     srand(time(0));
-
-
-
     initialize_player();
-
-
-
     main_menu();
-
-
-
     endwin();
-
-
-
     return 0;
 }
