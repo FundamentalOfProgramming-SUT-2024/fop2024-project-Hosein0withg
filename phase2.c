@@ -1,6 +1,6 @@
 //403105771
 //Rogue Game Project
-//last update: 2/2/2025
+//last update: 2/3/2025
 
 
 #define _GNU_SOURCE
@@ -92,6 +92,7 @@ void make_random_map();
 int random_number(int a, int b);
 int valid_move(int x, int y);
 void move_character(int i);
+void move_character_2x(int i);
 void move_and_message();
 void enemy_hit_us(int y, int x);
 void initialize_enemy();
@@ -2567,7 +2568,7 @@ void move_and_message() {
                 mvprintw(1,21,"Health: %d ",player.health);
                 mvprintw(0,1,"You ate a Normal Food and your energy was refreshed!                      ");
                 attron(COLOR_PAIR(2));
-                mvprintw(4,83,"Normal Food:    %d   ",player.food);
+                mvprintw(4,83,"Normal Food(f):    %d   ",player.food);
             }
 
             if (com == 's') {
@@ -2947,6 +2948,8 @@ void move_and_message() {
                 (PAIR_NUMBER(wall3 & A_COLOR) == 3 && ((wall3 & A_CHARTEXT) == '_' || (wall3 & A_CHARTEXT) == '|')) ||
                 (PAIR_NUMBER(wall4 & A_COLOR) == 3 && ((wall4 & A_CHARTEXT) == '_' || (wall4 & A_CHARTEXT) == '|') ) )
                 {
+                    attron(COLOR_PAIR(1));
+                    mvprintw(0,1,"You are at the entry of a 'Potion' room!                              ");
                     if (current_music != 0) {
                         playmusic(musics[0]);
                         current_music = 0;
@@ -2957,12 +2960,16 @@ void move_and_message() {
                 (PAIR_NUMBER(wall3 & A_COLOR) == 4 && ((wall3 & A_CHARTEXT) == '_' || (wall3 & A_CHARTEXT) == '|')) ||
                 (PAIR_NUMBER(wall4 & A_COLOR) == 4 && ((wall4 & A_CHARTEXT) == '_' || (wall4 & A_CHARTEXT) == '|')))
                 {
+                    attron(COLOR_PAIR(1));
+                    mvprintw(0,1,"You are at the entry of the 'Treasure' room!                          ");
                     if (current_music != 2) {
                         playmusic(musics[2]);
                         current_music = 2;
                     }
                 }
                 else {
+                    attron(COLOR_PAIR(1));
+                    mvprintw(0,1,"You are at the entry of a normal room!                                ");
                     if (current_music != 1) {
                         playmusic(musics[1]);
                         current_music = 1;
@@ -3167,7 +3174,7 @@ void move_and_message() {
                     mvprintw(0,1,"You were healed by Health Potion                                          ");
                 }
             }
-            if (count_hpotion == 10) player.ph_on == 0; if (count_spotion == 10) player.ps_on == 0; if (count_dpotion == 10) player.pd_on == 0;
+            if (count_hpotion == 10) player.ph_on = 0; if (count_spotion == 10) player.ps_on = 0; if (count_dpotion == 10) player.pd_on = 0;
 
             if (food_change == 20 && player.food > 0)
             {
