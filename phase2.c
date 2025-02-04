@@ -1,6 +1,6 @@
 //403105771
 //Rogue Game Project
-//last update: 2/3/2025
+//last update: 2/4/2025
 
 
 #define _GNU_SOURCE
@@ -116,12 +116,18 @@ int main_menu();
 int initSDL();
 int music(char name[30]);
 Mix_Music* playmusic(const char* musicFile);
+void initialize_player();
+void hallway_rd(int y1, int x1,int y2, int x2);
+void hallway_ru(int y1, int x1,int y2, int x2);
+void hallway_ur(int y1, int x1,int y2, int x2);
+void hallway_ul(int y1, int x1,int y2, int x2);
 void pass_gen();
 void clean_map();
 void save_map_before_quit();
 void save_map();
 void print_map_loading();
 void print_hallway();
+void profile_menu(char name[30]);
 void print_rooms();
 void print_room1(); void print_room2(); void print_room3(); void print_room4(); void print_room5(); void print_room6();
 
@@ -427,11 +433,11 @@ void game_menu_user(char name[30]) {
     noecho();
     init_pair(1,COLOR_WHITE,COLOR_BLUE);
     attron(COLOR_PAIR(1));
-    const char *menu[] = {"New Game", "Load Game","Settings","Scoreboard","Back"};
+    const char *menu[] = {"New Game", "Load Game","Settings","Scoreboard","Profile","Back"};
     int choice = 0;
     while (1)
     {
-        for (int i = 0; i < 5; ++i)
+        for (int i = 0; i < 6; ++i)
         {
             if (i == choice)
                 attron(A_REVERSE);
@@ -441,9 +447,9 @@ void game_menu_user(char name[30]) {
         }
         int ch = getch();
         if (ch == KEY_UP)
-            choice = (choice == 0) ? 4 : choice - 1;
+            choice = (choice == 0) ? 5 : choice - 1;
         else if (ch == KEY_DOWN)
-            choice = (choice == 4) ? 0 : choice + 1;
+            choice = (choice == 5) ? 0 : choice + 1;
         else if (ch == 10)
             break;
     }
@@ -469,6 +475,9 @@ void game_menu_user(char name[30]) {
         scoreboard1(name);
         break;
     case 4:
+        profile_menu(name);
+        break;
+    case 5:
         main_menu();
         break;
     }
@@ -784,12 +793,10 @@ void new_user() {
     FILE *gold = fopen("gold.txt", "a+");
     FILE *point = fopen("points.txt", "a+");
     FILE *fg = fopen("finished_game_number.txt", "a+");
-    FILE *sg = fopen("started_game_number.txt", "a+");
     fprintf(gold,"0\n");
     fprintf(point,"0\n");
     fprintf(fg,"0\n");
-    fprintf(sg,"0\n");
-    fclose(gold); fclose(point); fclose(fg); fclose(sg);
+    fclose(gold); fclose(point); fclose(fg);
     
     while (1)
     {
@@ -3963,6 +3970,78 @@ void print_rooms() {
         }
 }
 
+void profile_menu(char name[30]) {
+    FILE* user = fopen("username.txt","r");
+    FILE* gold = fopen("gold.txt","r");
+    FILE* point = fopen("points.txt","r");
+    FILE* email = fopen("email.txt","r");
+    FILE* fg = fopen("finished_game_number.txt","r");
+    char user2[30], email2[50], p[10], g[10], f[10]; int line = 0; int p2=0, fg2=0, g2=0;
+
+    while (fgets(user2,28,user) != NULL)
+    {
+        line++;
+        user2[strlen(user2)-1] = '\0';
+        if (strcmp(user2,player.username) == 0)
+            break;
+    }
+    fclose(user);
+
+    for (int i = 0; i < line; i++) fgets(email2,45,email);
+    email2[strlen(email2)-1] = '\0';
+    fclose(email);
+
+    for (int i = 0; i < line; i++) fgets(p,8,point);
+    p[strlen(p)-1] = '\0';
+    sscanf(p,"%d",&p2);
+    fclose(point);
+
+    for (int i = 0; i < line; i++) fgets(g,8,gold);
+    g[strlen(g)-1] = '\0';
+    sscanf(g,"%d",&g2);
+    fclose(gold);
+
+    for (int i = 0; i < line; i++) fgets(f,8,fg);
+    f[strlen(f)-1] = '\0';
+    sscanf(f,"%d",&fg2);
+    fclose(fg);
+
+    initscr();
+    clear();
+    curs_set(FALSE);
+    start_color();
+    keypad(stdscr, TRUE);
+    noecho();
+    init_pair(1,COLOR_WHITE,COLOR_BLUE);
+    attron(COLOR_PAIR(1));
+
+    mvprintw(2, 3, "Hello %s! Welcome to your profile!",player.username);
+    mvprintw(4, 3, "Email: %s",email2);
+    mvprintw(5, 3, "Points: %d",p2);
+    mvprintw(6, 3, "Golds: %d",g2);
+    mvprintw(7, 3, "Finished Games: %d",fg2);
+
+
+    int choice = 0;
+    while (1)
+    {
+        for (int i = 0; i < 1; ++i)
+        {
+            if (i == choice)
+                attron(A_REVERSE);
+            mvprintw(10 + i, 3, "Back");
+            if (i == choice)
+                attroff(A_REVERSE);
+        }
+        int ch = getch();
+        if (ch == 10)
+            break;
+    }
+    attroff(COLOR_PAIR(1));
+    clear();
+    refresh();
+    game_menu_user(name);
+}
 
 
 int main() {
