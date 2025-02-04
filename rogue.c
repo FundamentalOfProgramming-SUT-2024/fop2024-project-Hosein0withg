@@ -2535,7 +2535,7 @@ void move_and_message() {
                     break;
                 case '!':
                     attron(COLOR_PAIR(2));
-                    mvprintw(0,1,"Congratulations!! You've finished Rouge successfully!!                  ");
+                    mvprintw(0,1,"Congratulations!! You've finished Rogue successfully!!                  ");
                     save_game(1);
                     refresh();
                     napms(5000);
@@ -3006,7 +3006,7 @@ void move_and_message() {
                 break;
             case '!':
                 attron(COLOR_PAIR(2));
-                mvprintw(0,1,"Congratulations!! You've finished Rouge successfully!!                  ");
+                mvprintw(0,1,"Congratulations!! You've finished Rogue successfully!!                  ");
                 save_game(1);
                 refresh();
                 napms(5000);
