@@ -3890,6 +3890,7 @@ void print_room1() {
     }
     room1.visited = 1;
 }
+
 void print_room2() {
     for (int i = room2.ys; i <= room2.yf; i++) {
         for (int j = room2.xs; j <= room2.xf; j++) {
@@ -3898,6 +3899,7 @@ void print_room2() {
     }
     room2.visited = 1;
 }
+
 void print_room3() {
     for (int i = room3.ys; i <= room3.yf; i++) {
         for (int j = room3.xs; j <= room3.xf; j++) {
@@ -3906,6 +3908,7 @@ void print_room3() {
     }
     room3.visited = 1;
 }
+
 void print_room4() {
     for (int i = room4.ys; i <= room4.yf; i++) {
         for (int j = room4.xs; j <= room4.xf; j++) {
@@ -3914,6 +3917,7 @@ void print_room4() {
     }
     room4.visited = 1;
 }
+
 void print_room5() {
     for (int i = room5.ys; i <= room5.yf; i++) {
         for (int j = room5.xs; j <= room5.xf; j++) {
@@ -3922,6 +3926,7 @@ void print_room5() {
     }
     room5.visited = 1;
 }
+
 void print_room6() {
     for (int i = room6.ys; i <= room6.yf; i++) {
         for (int j = room6.xs; j <= room6.xf; j++) {
