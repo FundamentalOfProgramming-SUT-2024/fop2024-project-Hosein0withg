@@ -1,6 +1,7 @@
 //403105771
 //Rogue Game Project
 //last update: 2/4/2025
+//to compille the rogue.c file: gcc rogue.c -o rogue.out -lncursesw -lSDL2 -lSDL2_mixer && ./rogue.out
 
 
 #define _GNU_SOURCE
